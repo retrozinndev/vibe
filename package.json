@@ -1,0 +1,26 @@
+{
+  "name": "vibe",
+  "version": "0.0.1",
+  "description": "A Libadwaita Music Player",
+  "homepage": "https://github.com/retrozinndev/Vibe#readme",
+  "bugs": {
+    "url": "https://github.com/retrozinndev/Vibe/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/retrozinndev/Vibe.git"
+  },
+  "license": "BSD-3-Clause",
+  "author": "retrozinndev",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "types": "npx @ts-for-gir/cli generate --ignoreVersionConflicts",
+    "build": "([[ -d \"./@types\" ]] || npm run types) && node ./esbuild.config.js",
+    "start": "npm run build && gjs -m \"build/main.js\""
+  },
+  "dependencies": {
+    "esbuild": "^0.25.5",
+    "typescript": "^5.8.3"
+  }
+}
