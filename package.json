@@ -15,9 +15,10 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "types": "npx @ts-for-gir/cli generate --ignoreVersionConflicts",
-    "build": "([[ -d \"./@types\" ]] && echo \"Types skipped(already built). To force-build, run `types`\" || (echo \"Building types, this can take long...\" && npm run types)) && (echo \"Compiling Sass...\" && npx sass -I src/styles build/style.css) && (echo \"Building TypeScript with esbuild...\" && node ./esbuild.config.js)",
-    "start": "npm run build && gjs -m \"build/main.js\""
+    "types": "sh scripts/types.sh -f",
+    "build": "sh scripts/build.sh",
+    "start": "sh scripts/start.sh",
+    "clean": "sh scripts/clean.sh"
   },
   "dependencies": {
     "esbuild": "^0.25.5",
