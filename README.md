@@ -1,5 +1,8 @@
 # 🎵 Vibe
-GTK4 and Libadwaita Music Player.
+In development GTK4 and Libadwaita Music Player.
+
+> [!warning]
+> This is still in development and is not ready to use!
 
 ## Goals
 - Play music
