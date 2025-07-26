@@ -17,6 +17,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "types": "sh scripts/types.sh -f",
     "build": "sh scripts/build.sh",
+    "start:watch": "sh scripts/start-watch.sh",
     "start": "sh scripts/start.sh",
     "clean": "sh scripts/clean.sh"
   },
