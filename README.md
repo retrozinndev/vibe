@@ -1,13 +1,13 @@
 # 🎵 Vibe
-In development GTK4 and Libadwaita Music Player.
+In-development Music Player made with Adwaita.
 
 > [!warning]
-> This is still in development and is not ready to use!
+> This is still in development and doesn't work yet!
 
 ## Goals
-- Play music
-- Show player integrations with MPRIS
-- GnomeJS
-- TypeScript
+- Play(and maybe stream) music
+- Work with MPRIS Interface
+- Use TypeScript and [Gnim](https://github.com/aylur/gnim) with GJS
 - Internationalization (i18n)
-- Pretty interface, but following GNOME's design rules
+- Pretty attractive but familiar interface
+- Plugin support (for adding new sources and more...)
