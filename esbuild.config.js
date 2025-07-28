@@ -1,6 +1,6 @@
-import * as esbuild from "esbuild";
+import esbuild from "esbuild";
 
-await esbuild.build({
+esbuild.buildSync({
     entryPoints: [
         "src/**/*.ts"
     ],
@@ -8,8 +8,12 @@ await esbuild.build({
     format: "esm",
     splitting: false,
     bundle: true,
+    sourcemap: "inline",
     target: "firefox128",
     external: [
-        "gi://*"
+        "gi://*",
+        "system",
+        "gettext",
+        "resource://*"
     ]
 });
