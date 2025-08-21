@@ -19,9 +19,7 @@
         ]
     },
     "include": [
-        "./src/**/*.ts",
-        "./src/**/*.tsx",
-        "node_modules/**/*.ts",
-        "node_modules/**/*.tsx"
+        "./src/**/*.ts*",
+        "node_modules/**/*.ts*"
     ]
 }
