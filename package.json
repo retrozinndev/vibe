@@ -1,7 +1,8 @@
 {
+  "$schema": "https://www.schemastore.org/package.json",
   "name": "vibe",
   "version": "0.0.1",
-  "description": "A Libadwaita Music Player",
+  "description": "The craziest music player!",
   "homepage": "https://github.com/retrozinndev/Vibe#readme",
   "bugs": {
     "url": "https://github.com/retrozinndev/Vibe/issues"
@@ -15,9 +16,11 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "types": "sh scripts/types.sh -f",
+    "types": "sh scripts/types.sh",
+    "dev": "sh scripts/build.sh -d && sh scripts/start.sh",
     "build": "sh scripts/build.sh",
-    "start:watch": "sh scripts/start-watch.sh",
+    "build:release": "sh scripts/release.sh",
+    "release": "sh scripts/release.sh",
     "start": "sh scripts/start.sh",
     "clean": "sh scripts/clean.sh"
   },

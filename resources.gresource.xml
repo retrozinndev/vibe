@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<gresources>
+    <gresource prefix="/io/github/retrozinndev/vibe/style">
+        <file alias="main.css">build/resources/style.css</file>
+    </gresource>
+</gresources>

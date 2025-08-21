@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=Vibe
+Comment=The craziest music player!
+Type=Application
+Exec=sh -c "$VIBE_BINARY"
+StartupWMClass=io.github.retrozinndev.Vibe
