@@ -1,11 +1,10 @@
 set -e
 
-echo -n "Clean \`$(pwd)/build/\`? [y/n] "
-read answer
+builddir="${1:-./build}"
 
-if [[ $answer =~ "y" ]]; then
-    rm -rf "$(pwd)/build"
-    exit 0
+if [[ -d $builddir ]]; then
+    echo "[info] cleaning build dir: \"$builddir\""
+    rm -r "$builddir"
+else
+    echo "[info] build dir doesn't exist or is not accessible, skipped"
 fi
-
-echo "Skipped"
