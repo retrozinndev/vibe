@@ -3,49 +3,45 @@ import Gtk from "gi://Gtk?version=4.0";
 
 import { createRoot } from "gnim";
 import { App } from "../app";
+import Media from "../modules/media";
+import NavigationTabButton from "../widgets/NavigationTabButton";
+import OmniPlayer from "../widgets/OmniPlayer";
 
 
-export function startMainWindow() {
-    createRoot((dispose) => 
-        <Adw.Window title={"Vibe"} hideOnClose={false} visible onCloseRequest={() => dispose()}
+export const media = new Media();
+
+export function openMainWindow() {
+    createRoot((dispose) => {
+        return <Adw.ApplicationWindow title={"Vibe"} hideOnClose={false} visible onCloseRequest={() => dispose()}
           application={App.get_default()}>
 
             <Gtk.Box class={"container"} orientation={Gtk.Orientation.VERTICAL}>
-                <Adw.HeaderBar showEndTitleButtons showStartTitleButtons />
-                <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                    <Gtk.Box class={"main-box"} hexpand vexpand>
-                        <Adw.NavigationSplitView vexpand>
-                            <Gtk.Box class={"header"} vexpand={false}>
-                                <Gtk.Label class={"title"} label={"Abas"} hexpand 
-                                  halign={Gtk.Align.CENTER} 
-                                />
-                            </Gtk.Box>
-                        </Adw.NavigationSplitView>
-                    </Gtk.Box>
-                    <Gtk.Separator />
-                    <Gtk.Box class={"bg-secondary bottom-player"} hexpand vexpand={false}
-                      valign={Gtk.Align.END} heightRequest={64}>
+                <Adw.NavigationSplitView vexpand sidebarPosition={Gtk.PackType.START}>
+                    {/* sidebar */}
+                    <Adw.NavigationPage title={"Sidebar"} $type="sidebar">
+                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand={false} spacing={6}
+                          class={"sidebar-container"}>
 
-                        <Gtk.CenterBox hexpand vexpand={false} valign={Gtk.Align.CENTER}>
-                            <Gtk.Box class={"start"} $type="start" />
-                            <Gtk.Box class={"center"} halign={Gtk.Align.CENTER} $type="center"
-                              spacing={6}>
+                            <Adw.HeaderBar class={"flat"}>
+                                <Gtk.Label class="heading" label="Vibe" $type="title" />
+                            </Adw.HeaderBar>
 
-                                <Gtk.Button class={"previous"} vexpand={false}
-                                  iconName={"media-skip-backward-symbolic"} 
-                                />
-                                <Gtk.Button class={"pause "}
-                                  iconName={"media-playback-pause-symbolic"}
-                                />
-                                <Gtk.Button class={"next"} vexpand={false}
-                                  iconName={"media-skip-forward-symbolic"} 
-                                />
-                            </Gtk.Box>
-                            <Gtk.Box class={"end"} $type="end" />
-                        </Gtk.CenterBox>
-                    </Gtk.Box>
-                </Gtk.Box>
+                            <NavigationTabButton label={"Search"} iconName={"search-symbolic"} />
+                            <NavigationTabButton label={"Library"} iconName={"user-bookmarks-symbolic"} />
+                        </Gtk.Box>
+                    </Adw.NavigationPage>
+
+                    {/* page */}
+                    <Adw.NavigationPage title={"Library"}>
+                        <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
+                            <Adw.HeaderBar class={"flat"} />
+                            <Gtk.Box class={"content"} vexpand />
+                        </Gtk.Box>
+                    </Adw.NavigationPage>
+                </Adw.NavigationSplitView>
+                <Gtk.Separator />
+                <OmniPlayer />
             </Gtk.Box>
-        </Adw.Window>
-    );
+        </Adw.ApplicationWindow>;
+    });
 }

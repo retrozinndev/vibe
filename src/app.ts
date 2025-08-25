@@ -1,3 +1,4 @@
+import GLib from "gi://GLib?version=2.0";
 import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
 import Adw from "gi://Adw?version=1";
@@ -6,9 +7,13 @@ import Gio from "gi://Gio?version=2.0";
 import { createRoot, getScope, Scope } from "gnim";
 import { register } from "gnim/gobject";
 import { programArgs, programInvocationName } from "system";
-import { startMainWindow } from "./windows/Window";
+import { openMainWindow } from "./windows/Window";
 import { setConsoleLogDomain } from "console";
 
+
+
+Adw.init();
+Gtk.init();
 
 export { App };
 @register({ GTypeName: "VibeApp" })
@@ -19,7 +24,7 @@ class App extends Adw.Application {
     #decoder!: TextDecoder;
     #cssProvider: Gtk.CssProvider|null = null;
     #scope!: Scope;
-    #gresource!: Gio.Resource;
+    #gresource: Gio.Resource|null = null;
 
     vfunc_activate(): void {
         super.vfunc_activate();
@@ -27,7 +32,7 @@ class App extends Adw.Application {
     }
 
     vfunc_shutdown(): void {
-        super.vfunc_activate();
+        super.vfunc_shutdown();
         this.#scope.dispose();
     }
 
@@ -44,8 +49,6 @@ class App extends Adw.Application {
     }
 
     public addStyle(stylesheet: string): void {
-        this.resetStyle();
-
         this.#cssProvider = Gtk.CssProvider.new();
         this.#cssProvider.load_from_bytes(
             new TextEncoder().encode(stylesheet)
@@ -76,15 +79,51 @@ class App extends Adw.Application {
         super({
             version: VIBE_VERSION,
             applicationId: "io.github.retrozinndev.Vibe",
-            flags: Gio.ApplicationFlags.DEFAULT_FLAGS
+            flags: Gio.ApplicationFlags.DEFAULT_FLAGS // TODO: support command-line(still thinking on how it will work)
         });
 
         setConsoleLogDomain("Vibe");
 
         try {
-            this.#gresource = Gio.Resource.load(GRESOURCES_FILE);
+            this.#gresource = Gio.Resource.load(
+                GRESOURCES_FILE.split('/').filter(s => 
+                    s !== ""
+                ).map(path => {
+                    // support environment variables at runtime
+                    if(/^\$/.test(path)) {
+                        const env = GLib.getenv(path.replace(/^\$/, ""));
+                        if(env === null)
+                            throw new Error(
+                                `Couldn't get environment variable: ${path}`
+                            );
+
+                        return env;
+                    }
+
+                    return path;
+                }).join('/')
+            );
             Gio.resources_register(this.#gresource);
+
+
+            // add custom icons
+            Gtk.IconTheme.get_for_display(
+                Gdk.Display.get_default()!
+            ).add_resource_path("/io/github/retrozinndev/vibe/icons");
+
+            // load stylesheets
+            Gio.resources_enumerate_children(
+                "/io/github/retrozinndev/vibe/styles", null
+            ).forEach(name => 
+                this.addStyle(
+                    this.getDecoder().decode(Gio.resources_lookup_data(
+                        `/io/github/retrozinndev/vibe/styles/${name}`,
+                        null
+                    ).toArray())
+                )
+            );
         } catch(e) {
+            this.#gresource = null;
             console.error(`Couldn't load GResource: ${e}`);
         }
     }
@@ -97,16 +136,9 @@ class App extends Adw.Application {
     }
 
     public main(): void {
-        try {
-            Adw.init();
-            Gtk.init();
-        } catch(e) {
-            console.error(`Failed to initialize either GTK or Adwaita, expect issues\n${e}`);
-        }
-
         createRoot(() => {
             this.#scope = getScope();
-            startMainWindow();
+            openMainWindow();
         });
     }
 
