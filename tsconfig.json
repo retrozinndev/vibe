@@ -20,6 +20,7 @@
     },
     "include": [
         "./src/**/*.ts*",
+        "./lib/**/*.ts",
         "node_modules/**/*.ts*"
     ]
 }
