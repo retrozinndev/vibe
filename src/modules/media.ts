@@ -36,4 +36,19 @@ export default class Media extends GObject.Object {
 
         return this.instance;
     }
+
+    /** play a song */
+    private playSong(song: Song): void {}
+
+    /** play/resume current song */
+    public play(): void {}
+
+    /** pause the current song */
+    public pause(): void {}
+
+    /** jump to the next song of the queue */
+    public next(): void {}
+
+    /** go back to the previous song of the queue */
+    public previous(): void {}
 }

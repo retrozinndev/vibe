@@ -8,7 +8,7 @@ function setAlbumArt(gtkimage: Gtk.Image): void {
     const song = Media.getDefault().song;
     if(!song) return;
 
-    const image = song.image ?? song.album?.image;
+    const image = song.album?.image;
     if(image == null) return;
 
     try {

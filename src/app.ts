@@ -9,7 +9,7 @@ import { register } from "gnim/gobject";
 import { programArgs, programInvocationName } from "system";
 import { openMainWindow } from "./windows/Window";
 import { setConsoleLogDomain } from "console";
-import { VibeAPI } from "libvibe";
+import { Vibe as VibeAPI } from "libvibe";
 
 
 const api = new VibeAPI();
