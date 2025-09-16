@@ -40,7 +40,7 @@ But if you want a development build(and a faster way to test), use
 ```zsh
 pnpm dev
 ```
-which will build the app and run it right away(replaces the curretly-running instance).
+which will build the app and run it right away(replaces the currently-running instance).
 
 ### Start
 Although it's recommended to use `pnpm dev` to test builds, you can also run by using 
