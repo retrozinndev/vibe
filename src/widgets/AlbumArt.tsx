@@ -1,5 +1,4 @@
 import Gtk from "gi://Gtk?version=4.0";
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Media from "../modules/media";
 
 import { createBinding } from "gnim";
@@ -12,17 +11,10 @@ function setAlbumArt(gtkimage: Gtk.Image): void {
     const image = song.image ?? song.album?.image;
     if(image == null) return;
 
-    switch(true) {
-        case image instanceof GdkPixbuf.Pixbuf:
-            gtkimage.set_from_pixbuf(image);
-            break;
-
-        case /^file\:\/\//g.test(image as string):
-            gtkimage.set_from_file(image.replace(/^file\:\/\//g, ""))
-            break;
-
-        default:
-            console.error(`Couldn't set album art to: ${image}`);
+    try {
+        gtkimage.set_from_pixbuf(image);
+    } catch(e) {
+        console.error(`Couldn't set album art to: ${image}. Exception:\n${e}`);
     }
 }
 

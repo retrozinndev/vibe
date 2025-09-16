@@ -14,15 +14,13 @@ export default () =>
                 <Gtk.Box class="details" orientation={Gtk.Orientation.VERTICAL}
                   valign={Gtk.Align.CENTER} halign={Gtk.Align.START} vexpand>
 
-                    <Gtk.Label class="title-4" label={Media.getDefault().song.title} xalign={0} />
+                    <Gtk.Label class="title-4" label={Media.getDefault().song.name} xalign={0} />
                     <Gtk.Label class="caption" xalign={0} label={(() => {
                           const artists = Media.getDefault().song.artist;
-                          if(artists === undefined) 
+                          if(artists === undefined || artists.length < 1) 
                               return "Unknown Artist";
 
-                          return Array.isArray(artists) ?
-                              artists.map(artist => artist.name).join(", ") // TODO: support custom metadata separators
-                          : artists.name;
+                          return artists.map(artist => artist.name).join(", ") // TODO: support custom metadata separators
                       })()} 
                     />
                 </Gtk.Box>

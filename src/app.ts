@@ -9,13 +9,11 @@ import { register } from "gnim/gobject";
 import { programArgs, programInvocationName } from "system";
 import { openMainWindow } from "./windows/Window";
 import { setConsoleLogDomain } from "console";
+import { VibeAPI } from "libvibe";
 
 
-
-Adw.init();
-Gtk.init();
-
-export { App };
+const api = new VibeAPI();
+export { App, api as Vibe };
 @register({ GTypeName: "VibeApp" })
 class App extends Adw.Application {
     private static instance: App;
@@ -79,7 +77,7 @@ class App extends Adw.Application {
         super({
             version: VIBE_VERSION,
             applicationId: "io.github.retrozinndev.Vibe",
-            flags: Gio.ApplicationFlags.DEFAULT_FLAGS // TODO: support command-line(still thinking on how it will work)
+            flags: Gio.ApplicationFlags.DEFAULT_FLAGS 
         });
 
         setConsoleLogDomain("Vibe");
@@ -136,6 +134,9 @@ class App extends Adw.Application {
     }
 
     public main(): void {
+        Adw.init();
+        Gtk.init();
+
         createRoot(() => {
             this.#scope = getScope();
             openMainWindow();
