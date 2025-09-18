@@ -18,6 +18,18 @@ This will guide you on how to develop for the Vibe Music Player.
 To learn how to use build modifiers, most of the commands provide 
 a help message that you can trigger with `-h`.
 
+### Cloning the repo
+You need to use `--recurse-submodules` to make it fully work.
+```zsh
+git clone https://github.com/retrozinndev/vibe.git --recurse-submodules
+```
+
+If you already cloned the repo without the recurse submodules flag, you can run
+```zsh
+git submodule init && git submodule update
+```
+to fetch submodules.
+
 ### Build types (needed)
 You need to build types before starting to develop: this will let TypeScript know which 
 libraries from the [GI Repository(GIR)](https://gi.readthedocs.io/en/latest) are available to be used in the project,
