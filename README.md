@@ -1,16 +1,17 @@
 # 🎵 Vibe
-In-development Music Player made with Adwaita.
+In-development Music Player made with Adwaita. <br>
+The name is a [recursive acronym](https://en.wikipedia.org/wiki/Recursive_acronym): *Vibe* *i*s *b*ased on *e*xtensions.
 
 > [!warning]
 > This is still in development and doesn't work yet!
 
 ## Goals
-- Play(and maybe stream) music
-- Work with MPRIS Interface
+- Play(and maybe stream from tcp/udp) music
+- Implement MPRIS
 - Use TypeScript and [Gnim](https://github.com/aylur/gnim) with GJS
 - Internationalization (i18n)
 - Pretty attractive but familiar interface
-- Plugin support (for adding new sources and more...)
+- Plugin support (for adding new sources and features...)
 
 ## :hammer_and_wrench: Development
 This will guide you on how to develop for the Vibe Music Player.
