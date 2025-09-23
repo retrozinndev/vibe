@@ -38,11 +38,6 @@ Options:
     esac
 done
 
-if ! "$esbuild -h" > /dev/null 2>&1; then
-    echo "[error] esbuild not found. please make sure that it's correctly specified/in your PATH" > /dev/stderr
-    exit 1
-fi
-
 sh ./scripts/clean.sh
 
 mkdir -p $output
