@@ -16,13 +16,13 @@
   "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "types": "sh scripts/types.sh",
-    "dev": "sh scripts/build.sh -d && sh scripts/start.sh",
-    "build": "sh scripts/build.sh",
-    "build:release": "sh scripts/release.sh",
-    "release": "sh scripts/release.sh",
-    "start": "sh scripts/start.sh",
-    "clean": "sh scripts/clean.sh"
+    "types": "bash scripts/types.sh",
+    "dev": "bash scripts/build.sh -d && bash scripts/start.sh",
+    "build": "bash scripts/build.sh",
+    "build:release": "bash scripts/release.sh",
+    "release": "bash scripts/release.sh",
+    "start": "bash scripts/start.sh",
+    "clean": "bash scripts/clean.sh"
   },
   "dependencies": {
     "esbuild": "^0.25.10",
