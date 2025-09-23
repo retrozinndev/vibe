@@ -38,7 +38,7 @@ Options:
     esac
 done
 
-sh ./scripts/clean.sh
+bash ./scripts/clean.sh
 
 mkdir -p $output
 
@@ -48,7 +48,7 @@ sass --no-source-map -I ./resources/styles resources/styles/style.scss build/res
 echo "[info] compiling gresource"
 gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
     echo -n "${gresources_target:-$output/resources.gresource}"`
-[[ ! "$keep_gresource" ]] && mkdir -p `dirname "$gres_target"`
+[ ! "$keep_gresource" ] && mkdir -p `dirname "$gres_target"`
 glib-compile-resources resources.gresource.xml \
     --sourcedir . \
     --target "$gres_target"
