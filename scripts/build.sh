@@ -2,8 +2,9 @@
 set -e
 
 output="./build"
+esbuild="esbuild"
 
-while getopts r:o:c:bdh args; do
+while getopts r:o:e:c:bdh args; do
     case "$args" in
         r) 
             gresources_target=${OPTARG}
@@ -13,6 +14,9 @@ while getopts r:o:c:bdh args; do
             ;;
         o)
             output=${OPTARG}
+            ;;
+        e)
+            esbuild=${OPTARG}
             ;;
         d)
             is_devel=true
@@ -25,6 +29,7 @@ Please use \`build:release\` for release builds.
 Options: 
   -r \$file: specify gresource's target path (default: \`\$output/resources.gresource\`)
   -o \$path: specify the build's output directory (default: \`./build\`)
+  -e \$exec: specify where's the esbuild binary (default: \`env esbuild\`)
   -b: only target gresource in the build, keeping the file in the output dir
   -d: enable developer mode in the build
   -h: show this help message"
@@ -33,8 +38,8 @@ Options:
     esac
 done
 
-if ! command -v esbuild > /dev/null 2>&1; then
-    echo "[error] esbuild not found. please make sure that it's in your PATH" > /dev/stderr
+if ! "$esbuild -h" > /dev/null 2>&1; then
+    echo "[error] esbuild not found. please make sure that it's correctly specified/in your PATH" > /dev/stderr
     exit 1
 fi
 
@@ -55,7 +60,7 @@ glib-compile-resources resources.gresource.xml \
 
 echo "[info] bundling project"
 find ./src/**/*.ts* | sed -e 's/.*/import ".&";/' > $output/concat.ts
-esbuild --bundle $output/concat.ts \
+$esbuild --bundle $output/concat.ts \
     --outfile=$output/vibe.js \
     --source-root=./src \
     --sourcemap=inline \
