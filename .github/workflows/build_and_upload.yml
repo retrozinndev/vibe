@@ -1,0 +1,45 @@
+name: "Build and Upload"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths: [ "src/", "lib/" ]
+  pull_request:
+    branches: [ "main" ]
+    paths: [ "src/", "lib/" ]
+  workflow_dispatch:
+
+
+jobs:
+  setup_and_build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Setup node and pnpm"
+        uses: "pnpm/action-setup@v4.1.0"
+      
+      - name: "Install dependencies"
+        run: |
+          pnpm i
+          pnpm add -g esbuild
+          apt update && apt upgrade
+          apt install libglib2.0-dev build-essential gjs
+
+      - name: "Build project"
+        run: "pnpm build:release"
+
+  upload:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "Install jq"
+        run: "apt update && apt upgrade && apt install jq"
+
+      - name: "Setup environment"
+        run: "export VIBE_VERSION=\"$(cat package.json | jq -r .version)\""
+
+      - name: "Upload artifact"
+        uses: "actions/upload-artifact@v4.6.2"
+        with:
+          name: "vibe-$VIBE_VERSION"
+          path: "build/release"
