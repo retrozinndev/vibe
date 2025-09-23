@@ -28,7 +28,7 @@
     "esbuild": "^0.25.10",
     "gnim": "^1.8.0",
     "libvibe": "link:lib",
-    "sass": "^1.93.0",
+    "sass": "^1.93.1",
     "typescript": "^5.9.2"
   }
 }

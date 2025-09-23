@@ -17,13 +17,16 @@ jobs:
     steps:
       - name: "Setup node and pnpm"
         uses: "pnpm/action-setup@v4.1.0"
+        with:
+          version: "latest"
+          run_install: false
       
       - name: "Install dependencies"
         run: |
-          pnpm i
-          pnpm add -g esbuild
-          apt update && apt upgrade
-          apt install libglib2.0-dev build-essential gjs
+          pnpm install
+          sudo pnpm add -g esbuild
+          sudo apt update -y && apt upgrade -y
+          sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
         run: "pnpm build:release"
@@ -33,7 +36,7 @@ jobs:
 
     steps:
       - name: "Install jq"
-        run: "apt update && apt upgrade && apt install jq"
+        run: "sudo apt install -y jq"
 
       - name: "Setup environment"
         run: "export VIBE_VERSION=\"$(cat package.json | jq -r .version)\""
