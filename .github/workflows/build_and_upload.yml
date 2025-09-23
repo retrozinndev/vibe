@@ -29,12 +29,11 @@ jobs:
       - name: "Install dependencies"
         run: |
           pnpm install
-          pnpm add -g esbuild
           sudo apt update -y && sudo apt upgrade -y
           sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
-        run: "pnpm build:release -e \"pnpx esbuild\""
+        run: "pnpm build:release -e \"pnpm dlx esbuild\""
 
       - name: "Upload for next job"
         uses: "actions/upload-artifact@v4.6.2"
