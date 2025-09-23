@@ -30,7 +30,7 @@ jobs:
         run: |
           pnpm install
           pnpm add -g esbuild
-          sudo apt update -y && apt upgrade -y
+          sudo apt update -y && sudo apt upgrade -y
           sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
