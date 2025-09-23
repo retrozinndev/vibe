@@ -28,6 +28,8 @@ export function openMainWindow() {
 
                             <NavigationTabButton label={"Search"} iconName={"search-symbolic"} />
                             <NavigationTabButton label={"Library"} iconName={"user-bookmarks-symbolic"} />
+
+                            <NavigationTabButton label={"Plugins"} iconName={"folder-extensions-symbolic"} />
                         </Gtk.Box>
                     </Adw.NavigationPage>
 

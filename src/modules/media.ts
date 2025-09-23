@@ -1,33 +1,31 @@
-import GObject, { getter, register } from "gnim/gobject";
-import { Artist, Song } from "libvibe";
-import { Vibe } from "../app";
+import GObject, { getter, register, gtype } from "gnim/gobject";
+import { Song } from "libvibe";
+import { Player } from "./player";
 
 
+/** get media information (currently-playing media)
+* @todo */
 @register({ GTypeName: "Media" })
 export default class Media extends GObject.Object {
     private static instance: Media;
 
-    /** the active song (can be null if there's none) */
+    #player: Player;
     #song: Song|null = new Song({
-        name: "Rainy Boots",
-        id: Vibe.generateID(),
         file: "",
-        artist: [
-            new Artist({
-                name: "inabakumori",
-                url: "https://open.spotify.com/artist/25b7eSZD64Sm8ReHZ1WDc7"
-            })
-        ],
-        url: "https://open.spotify.com/track/29z7qKoF5vNyilj2YWZVzh"
+        name: "Nothing is Playing",
+        id: 464648
     });
-
     
-    /** the active song (can be null if there's none) */
-    @getter(Song.ParamSpec) 
-    get song() { return this.#song!; }
+    /** the active song, can be null */
+    @getter(gtype<Song|null>(Song)) 
+    get song() { return this.#song; }
+
 
     constructor() {
         super();
+
+        const player = new Player();
+        this.#player = player;
     }
 
     public static getDefault(): Media {
@@ -38,7 +36,9 @@ export default class Media extends GObject.Object {
     }
 
     /** play a song */
-    private playSong(song: Song): void {}
+    private playSong(song: Song): void {
+        console.log(`Play song: ${song.file}`);
+    }
 
     /** play/resume current song */
     public play(): void {}
