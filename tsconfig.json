@@ -14,12 +14,11 @@
         "jsx": "react-jsx",
         "jsxImportSource": "gnim/gtk4",
         "types": [
-            "./@types/index.d.ts",
             "./env.d.ts"
         ]
     },
     "include": [
-        "./src/**/*.ts*",
-        "node_modules/**/*.ts*"
+        "./@types",
+        "./src/**/*.ts*"
     ]
 }

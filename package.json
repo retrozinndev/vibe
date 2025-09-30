@@ -27,7 +27,8 @@
   "dependencies": {
     "esbuild": "^0.25.10",
     "gnim": "^1.8.0",
-    "libvibe": "link:lib",
+    "gnim-utils": "link:./src/utils",
+    "libvibe": "link:./src/lib",
     "sass": "^1.93.1",
     "typescript": "^5.9.2"
   }
