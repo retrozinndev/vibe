@@ -1,6 +1,0 @@
-[submodule "libvibe"]
-	path = src/lib
-	url = https://github.com/retrozinndev/libvibe.git
-[submodule "gnim-utils"]
-	path = src/utils
-	url = https://github.com/retrozinndev/gnim-utils.git

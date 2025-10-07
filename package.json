@@ -27,8 +27,8 @@
   "dependencies": {
     "esbuild": "^0.25.10",
     "gnim": "^1.8.0",
-    "gnim-utils": "link:./src/utils",
-    "libvibe": "link:./src/lib",
+    "gnim-utils": "github:retrozinndev/gnim-utils",
+    "libvibe": "github:retrozinndev/libvibe",
     "sass": "^1.93.1",
     "typescript": "^5.9.2"
   }
