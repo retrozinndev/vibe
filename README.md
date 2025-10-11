@@ -20,16 +20,14 @@ To learn how to use build modifiers, most of the commands provide
 a help message that you can trigger with `-h`.
 
 ### Cloning the repo
-You need to use `--recurse-submodules` to make it fully work.
+You can run:
 ```zsh
-git clone https://github.com/retrozinndev/vibe.git --recurse-submodules
+git clone https://github.com/retrozinndev/vibe.git
 ```
-
-If you already cloned the repo without the recurse submodules flag, you can run
+or, if you have GitHub CLI:
 ```zsh
-git submodule init && git submodule update
+gh repo clone retrozinndev/vibe
 ```
-to fetch submodules.
 
 ### Build types (needed)
 You need to build types before starting to develop: this will let TypeScript know which 
