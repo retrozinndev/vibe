@@ -1,8 +1,6 @@
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { Vibe } from "libvibe";
-import { Song } from "libvibe";
-import { Plugin } from "libvibe";
+import { Plugin, Song, Vibe } from "libvibe";
 
 
 // only built-in plugins can have a different class name from "VibePlugin"(external)

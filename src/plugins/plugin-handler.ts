@@ -1,11 +1,13 @@
 import Adw from "gi://Adw?version=1";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
+import GObject from "gi://GObject?version=2.0";
+
+import { property, register } from "gnim/gobject";
+import * as Libvibe from "libvibe";
 import { Plugin } from "libvibe";
 import { App } from "../app";
 import { PluginLocal } from "./builtin/local";
-import { getter, register } from "gnim/gobject";
-import GObject from "gi://GObject?version=2.0";
 
 
 /** this is only for type's sake, so it works correctly when importing a plugin.
@@ -13,9 +15,7 @@ import GObject from "gi://GObject?version=2.0";
 class FinalPlugin extends Plugin {
     constructor() { super({ name: "FinalPlugin" }); }
 }
-
-// external and builtin plugins don't have constructor parameters, so that's what FinalPlugin is for,
-// to type these plugins. Plugin is just a base class to create plugins.
+// external and builtin plugins don't have constructor params, that's what FinalPlugin is for.
 
 @register({ GTypeName: "VibePluginHandler" })
 export default class PluginHandler extends GObject.Object {
@@ -26,13 +26,12 @@ export default class PluginHandler extends GObject.Object {
     ];
 
     #plugins: Array<Plugin> = [];
-    #currentPlugin!: Plugin;
     
     readonly pluginsDir = Gio.File.new_for_path(`${App.dataDir}/plugins`);
 
     /** the currently active plugin */
-    @getter(Plugin)
-    get plugin() { return this.#currentPlugin; }
+    @property(Plugin)
+    plugin!: Plugin;
 
 
     constructor() {
@@ -40,6 +39,11 @@ export default class PluginHandler extends GObject.Object {
 
         if(!this.pluginsDir.query_exists(null))
             this.pluginsDir.make_directory_with_parents(null);
+
+        // add application's libvibe module to globalThis, so plugins can access the same instance
+        Object.assign(globalThis, {
+            libvibe: Libvibe
+        });
 
         this.#builtinPlugins.forEach(pl =>
             this.importBultin(pl));
@@ -68,7 +72,7 @@ export default class PluginHandler extends GObject.Object {
             }
         );
 
-        this.#currentPlugin = this.#plugins[0]; // TODO: save last-used plugin and load it here
+        this.plugin = this.#plugins[0]; // TODO: save last-used plugin and load it here
     }
 
     async importPlugin(file: string|Gio.File): Promise<FinalPlugin> {
@@ -85,7 +89,7 @@ export default class PluginHandler extends GObject.Object {
         
 
         const plugin: {
-            VibePlugin: typeof FinalPlugin; // without constructor parameters! (TODO: type implementation)
+            VibePlugin: typeof FinalPlugin;
         } = await import(pluginFile.get_path()!);
 
         const instance = new plugin.VibePlugin();
@@ -96,7 +100,7 @@ export default class PluginHandler extends GObject.Object {
         return instance;
     }
 
-    async importBultin(Plugin: typeof FinalPlugin|any): Promise<void> {
+    async importBultin(Plugin: typeof FinalPlugin): Promise<void> {
         const pl = new Plugin();
         pl.status = "init";
         this.#plugins.push(pl);
