@@ -1,31 +1,42 @@
-import GObject, { getter, register, gtype } from "gnim/gobject";
-import { Song } from "libvibe";
-import { Player } from "./player";
+import Gst from "gi://Gst?version=1.0";
+import GObject, { getter, gtype, register } from "gnim/gobject";
+import {
+    Media as VibeMedia,
+    MediaSignalSignatures,
+    SongList,
+    Song,
+    Vibe,
+    Queue
+} from "libvibe";
 
 
-/** get media information (currently-playing media)
+/** play and control media from plugins
 * @todo */
-@register({ GTypeName: "Media" })
-export default class Media extends GObject.Object {
+@register({ GTypeName: "VibeMedia" })
+export default class Media extends GObject.Object implements VibeMedia {
+    declare $signals: MediaSignalSignatures;
     private static instance: Media;
 
-    #player: Player;
+    #gstVersion: string;
+    #queue: Queue|null = null;
     #song: Song|null = new Song({
         file: "",
         name: "Nothing is Playing",
-        id: 464648
+        id: Vibe.getDefault().generateID()
     });
     
     /** the active song, can be null */
     @getter(gtype<Song|null>(Song)) 
     get song() { return this.#song; }
 
+    @getter(gtype<Queue|null>(Queue))
+    get queue() { return this.#queue; }
 
     constructor() {
         super();
 
-        const player = new Player();
-        this.#player = player;
+        this.#gstVersion = Gst.version_string();
+
     }
 
     public static getDefault(): Media {
@@ -35,20 +46,15 @@ export default class Media extends GObject.Object {
         return this.instance;
     }
 
-    /** play a song */
-    private playSong(song: Song): void {
-        console.log(`Play song: ${song.file}`);
+    public playSong(song: Song, pos: number): void {
     }
 
-    /** play/resume current song */
-    public play(): void {}
+    public playList(list: SongList, posNum: number): void {
+        
+    }
 
-    /** pause the current song */
+    public resume(): void {}
     public pause(): void {}
-
-    /** jump to the next song of the queue */
     public next(): void {}
-
-    /** go back to the previous song of the queue */
     public previous(): void {}
 }
