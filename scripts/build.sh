@@ -29,7 +29,7 @@ Please use \`build:release\` for release builds.
 Options: 
   -r \$file: specify gresource's target path (default: \`\$output/resources.gresource\`)
   -o \$path: specify the build's output directory (default: \`./build\`)
-  -e \$exec: specify where's the esbuild binary (default: \`env esbuild\`)
+  -e \$exec: specify where's the esbuild binary (default: \`esbuild\`)
   -b: only target gresource in the build, keeping the file in the output dir
   -d: enable developer mode in the build
   -h: show this help message"
@@ -42,9 +42,11 @@ bash ./scripts/clean.sh
 
 mkdir -p $output
 
+# -> Sass (stylesheet)
 echo "[info] compiling sass in \`./build/resources/style.css\`"
 sass --no-source-map -I ./resources/styles resources/styles/style.scss build/resources/style.css
 
+# -> GResource
 echo "[info] compiling gresource"
 gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
     echo -n "${gresources_target:-$output/resources.gresource}"`
@@ -53,6 +55,7 @@ glib-compile-resources resources.gresource.xml \
     --sourcedir . \
     --target "$gres_target"
 
+# -> Bundle
 echo "[info] bundling project"
 find ./src/**/*.ts* | sed -e 's/.*/import ".&";/' > $output/concat.ts
 $esbuild --bundle $output/concat.ts \
@@ -70,6 +73,7 @@ $esbuild --bundle $output/concat.ts \
     --define:"VIBE_VERSION='`cat package.json | jq -r .version`'" \
     --define:"GRESOURCES_FILE='${gresources_target:-$output/resources.gresource}'" 
 
+# -> Compile
 echo "[info] creating executable"
 echo -en "\
 #!/usr/bin/bash

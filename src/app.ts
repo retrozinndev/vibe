@@ -1,15 +1,17 @@
+import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
 import Gdk from "gi://Gdk?version=4.0";
-import Gtk from "gi://Gtk?version=4.0";
-import Adw from "gi://Adw?version=1";
 import Gio from "gi://Gio?version=2.0";
+import Gst from "gi://Gst?version=1.0";
+import Gtk from "gi://Gtk?version=4.0";
+import PluginHandler from "./plugins/plugin-handler";
 
+import { setConsoleLogDomain } from "console";
 import { createRoot, getScope, Scope } from "gnim";
 import { register } from "gnim/gobject";
-import { programArgs, programInvocationName } from "system";
-import { openMainWindow } from "./windows/Window";
-import { setConsoleLogDomain } from "console";
 import { Vibe } from "libvibe";
+import { programArgs, programInvocationName } from "system";
+import { openMainWindow } from "./Window";
 
 
 @register({ GTypeName: "VibeApp" })
@@ -20,9 +22,6 @@ export class App extends Adw.Application {
     public static cacheDir = `${GLib.get_user_cache_dir()}/vibe`;
     public static runtimeDir = `${GLib.get_user_runtime_dir()}/vibe`;
 
-    readonly #socketFile = Gio.File.new_for_path(`${App.runtimeDir}/socket.sock`);
-    #socketService!: Gio.SocketService;
-    #socketAdress!: Gio.UnixSocketAddress;
     #gresource: Gio.Resource|null = null;
     #cssProvider: Gtk.CssProvider|null = null;
     #encoder!: TextEncoder;
@@ -81,7 +80,7 @@ export class App extends Adw.Application {
     constructor() {
         super({
             version: VIBE_VERSION,
-            applicationId: "io.github.retrozinndev.Vibe",
+            applicationId: "io.github.retrozinndev.vibe",
             flags: Gio.ApplicationFlags.DEFAULT_FLAGS 
         });
 
@@ -122,62 +121,14 @@ export class App extends Adw.Application {
     }
 
     public main(): void {
-        Adw.init();
-        Gtk.init();
-
+        Gst.init(null);
         this.loadAssets();
 
-        // init socket
-        const runtimeDir = Gio.File.new_for_path(App.runtimeDir);
-        if(!runtimeDir.query_exists(null))
-            runtimeDir.make_directory_with_parents(null);
+        // init libvibe
+        Vibe.getDefault();
 
-        if(this.#socketFile.query_exists(null))
-            this.#socketFile.delete(null);
-
-        const socketPath = this.#socketFile.peek_path()!;
-
-        this.#socketService = Gio.SocketService.new();
-        this.#socketAdress = Gio.UnixSocketAddress.new(socketPath);
-        this.#socketService.add_address(
-            this.#socketAdress,
-            Gio.SocketType.STREAM,
-            Gio.SocketProtocol.DEFAULT,
-            null
-        );
-
-        this.#socketService.connect("incoming", (_, conn) => {
-            const inStream = Gio.DataInputStream.new(conn.get_input_stream()),
-                outStream = conn.get_output_stream();
-
-            inStream.read_upto_async('\x00', -1, GLib.PRIORITY_DEFAULT, null, (self, res) => {
-                const [input, len] = self!.read_upto_finish(res);
-
-                if(len < 1) // no input provided
-                    return;
-
-                console.log(`Input received from socket: "${input}"`);
-                outStream.write_bytes_async(
-                    this.getEncoder().encode("Server received request!"),
-                    GLib.PRIORITY_DEFAULT,
-                    null,
-                    (_, res) => {
-                        const byteLength = outStream.write_bytes_finish(res);
-
-                        if(byteLength < 1) {
-                            console.error("An error occurred and the bytes sent to the client were less than 1 (corrupted)");
-                            return;
-                        }
-                    }
-                );
-            });
-
-            return true; // stop connection on end
-        });
-
-        // init libvibe (socket communication)
-        const libvibe = new Vibe({ enableSocket: false });
-        Vibe.setDefault(libvibe); // so plugins can access `Vibe.getDefault()` without creating another instance
+        // init plugins
+        PluginHandler.getDefault();
 
         createRoot(() => {
             this.#scope = getScope();

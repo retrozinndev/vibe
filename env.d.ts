@@ -1,4 +1,10 @@
+import * as Libvibe from "libvibe";
 
-declare const VIBE_VERSION: string;
-declare const GRESOURCES_FILE: string;
-declare const DEVEL: boolean;
+
+declare global {
+    const libvibe: typeof Libvibe;
+
+    const VIBE_VERSION: string;
+    const GRESOURCES_FILE: string;
+    const DEVEL: boolean;
+};

@@ -1,6 +1,17 @@
 
 .navigation-tab-button {
+  $padding-block: 7px;
+
   margin: 0 6px;
+
+  padding: {
+    top: $padding-block;
+    bottom: $padding-block;
+  };
+}
+
+window .container {
+  background: #{"@theme_bg_color"};
 }
 
 .omniplayer .album-art {
