@@ -1,17 +1,16 @@
+import { setConsoleLogDomain } from "console";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
 import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio?version=2.0";
 import Gst from "gi://Gst?version=1.0";
 import Gtk from "gi://Gtk?version=4.0";
-import PluginHandler from "./plugins/plugin-handler";
-
-import { setConsoleLogDomain } from "console";
 import { createRoot, getScope, Scope } from "gnim";
 import { register } from "gnim/gobject";
 import { Vibe } from "libvibe";
 import { programArgs, programInvocationName } from "system";
 import { openMainWindow } from "./Window";
+import PluginHandler from "./plugins/plugin-handler";
 
 
 @register({ GTypeName: "VibeApp" })
@@ -23,10 +22,13 @@ export class App extends Adw.Application {
     public static runtimeDir = `${GLib.get_user_runtime_dir()}/vibe`;
 
     #gresource: Gio.Resource|null = null;
+    #license!: string;
     #cssProvider: Gtk.CssProvider|null = null;
     #encoder!: TextEncoder;
     #decoder!: TextDecoder;
     #scope!: Scope;
+
+    get license() { return this.#license; }
 
     vfunc_activate(): void {
         super.vfunc_activate();
@@ -152,6 +154,13 @@ export class App extends Adw.Application {
                     null
                 ).toArray())
             )
+        );
+
+        this.#license = this.getDecoder().decode(
+            Gio.resources_lookup_data(
+                "/io/github/retrozinndev/vibe/data/license",
+                null
+            ).toArray()
         );
     }
 
