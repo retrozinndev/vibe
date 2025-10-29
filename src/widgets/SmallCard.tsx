@@ -3,11 +3,12 @@ import Gdk from "gi://Gdk?version=4.0";
 import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, For } from "gnim";
-import { getter, gtype, property, signal } from "gnim/gobject";
+import { getter, gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, isLabelButton, LabelButton } from "libvibe";
 import { createScopedConnection, omitObjectKeys } from "../modules/util";
 
 
+@register({ GTypeName: "VibeSmallCard" })
 export default class SmallCard extends Adw.Bin {
     declare $signals: Adw.Bin.SignalSignatures & {
         "clicked": () => void;

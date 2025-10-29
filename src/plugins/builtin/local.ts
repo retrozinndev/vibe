@@ -1,9 +1,12 @@
+import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
-import { Plugin, Song, Vibe } from "libvibe";
+import { register } from "gnim/gobject";
+import { Plugin, Section, Song, Vibe } from "libvibe";
 
 
 // only built-in plugins can have a different class name from "VibePlugin"(external)
+@register()
 export class PluginLocal extends Plugin {
 
     supportedFormats: Array<string> = [
@@ -49,10 +52,20 @@ export class PluginLocal extends Plugin {
                     // add song
                     this.songlist.add(new Song({
                         id: Vibe.getDefault().generateID(),
+                        image: GdkPixbuf.Pixbuf.new_from_resource("/io/github/retrozinndev/vibe/examples/lagtrain.jpg"),
                         file: `${vibeMusicDir.peek_path()!}/${item.get_name()}`
                     }));
                 }
             }
         );
+    }
+
+    async getSections(length?: number, offset?: number): Promise<Array<Section> | null> {
+        return [{
+            title: "Your songs",
+            description: "Songs that have been detected by the Local plugin",
+            content: this.songlist.songs,
+            type: "row"
+        } satisfies Section];
     }
 }

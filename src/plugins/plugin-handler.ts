@@ -2,8 +2,7 @@ import Adw from "gi://Adw?version=1";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import GObject from "gi://GObject?version=2.0";
-
-import { property, register } from "gnim/gobject";
+import { getter, property, register } from "gnim/gobject";
 import * as Libvibe from "libvibe";
 import { Plugin } from "libvibe";
 import { App } from "../app";
@@ -25,9 +24,14 @@ export default class PluginHandler extends GObject.Object {
         PluginLocal
     ];
 
+    #builtins: Array<Plugin> = [];
     #plugins: Array<Plugin> = [];
     
     readonly pluginsDir = Gio.File.new_for_path(`${App.dataDir}/plugins`);
+
+
+    @getter(Array<Plugin>)
+    get plugins() { return [...this.#plugins]; }
 
     /** the currently active plugin */
     @property(Plugin)
@@ -46,7 +50,10 @@ export default class PluginHandler extends GObject.Object {
         });
 
         this.#builtinPlugins.forEach(pl =>
-            this.importBultin(pl));
+            this.importBultin(pl).catch(e => 
+                console.error(`An error occurred in built-in plugin(${
+                    pl.name}): ${e.message}\n${e.stack}`)
+            ));
 
         this.pluginsDir.enumerate_children_async(
             "standard::*", 
@@ -95,16 +102,23 @@ export default class PluginHandler extends GObject.Object {
         const instance = new plugin.VibePlugin();
         instance.status = "init";
         this.#plugins.push(instance);
+        this.notify("plugins");
         instance.status = "ok";
 
         return instance;
     }
 
-    async importBultin(Plugin: typeof FinalPlugin): Promise<void> {
-        const pl = new Plugin();
+    async importBultin(plugin: typeof FinalPlugin): Promise<void> {
+        const pl = new plugin();
         pl.status = "init";
+        this.#builtins.push(pl);
         this.#plugins.push(pl);
+        this.notify("plugins");
         pl.status = "ok";
+    }
+
+    public isBuiltin(plugin: Plugin): boolean {
+        return this.#builtins.filter(p => p.id === plugin.id)[0] !== undefined;
     }
 
     public static getDefault(): PluginHandler {

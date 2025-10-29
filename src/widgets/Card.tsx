@@ -7,24 +7,23 @@ import { createBinding, For } from "gnim";
 import { gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, LabelButton } from "libvibe";
 import { createScopedConnection, createSubscription, omitObjectKeys, toBoolean } from "../modules/util";
+import Pango from "gi://Pango?version=1.0";
 
-
-interface CardSignalSignatures extends Adw.Bin.SignalSignatures {
-    "clicked": () => void;
-    "button-clicked": (button: IconButton|LabelButton) => void;
-    "notify::title": (title: string) => void;
-    "notify::description": (description: string|null) => void;
-    "notify::image": (image: GdkPixbuf.Pixbuf|null) => void;
-    "notify::buttons": (buttons: Array<IconButton|LabelButton>|null) => void;
-}
 
 /** A nice widget with a card view, containing an image(optional), 
 * title, description and a button list in the bottom.
 * Use this to display some information for a plugin, or even an Album/Song.
 */
-@register({ GTypeName: "Card" })
+@register({ GTypeName: "VibeCard" })
 export default class Card extends Adw.Bin {
-    declare $signals: CardSignalSignatures;
+    declare $signals: Adw.Bin.SignalSignatures & {
+        "clicked": () => void;
+        "button-clicked": (button: IconButton|LabelButton) => void;
+        "notify::title": (title: string) => void;
+        "notify::description": (description: string|null) => void;
+        "notify::image": (image: GdkPixbuf.Pixbuf|null) => void;
+        "notify::buttons": (buttons: Array<IconButton|LabelButton>|null) => void;
+    };
 
     /** signal ::clicked, emitted when the user clicks in the card(not in the buttons) */
     @signal() clicked() {}
@@ -50,14 +49,17 @@ export default class Card extends Adw.Bin {
     @property(gtype<Array<IconButton|LabelButton>|null>(Array<IconButton|LabelButton>))
     buttons: Array<IconButton|LabelButton>|null = null;
 
+    @property(gtype<Gtk.Align>(Number))
+    buttonAlign: Gtk.Align = Gtk.Align.CENTER;
+
     constructor(props: {
         title: string;
         description?: string;
         image?: GdkPixbuf.Pixbuf|string|Gio.File;
+        buttonAlign?: Gtk.Align;
         buttons?: Array<IconButton | LabelButton>;
     } & Partial<Adw.Bin.ConstructorProps>) {
         super({
-            cssName: "page",
             ...omitObjectKeys(props, [
                 "title",
                 "description",
@@ -68,6 +70,7 @@ export default class Card extends Adw.Bin {
 
         const gestureClick = Gtk.GestureClick.new();
         
+        this.add_css_class("card");
         this.add_controller(gestureClick);
         createScopedConnection(
             gestureClick, "released", () => {
@@ -83,6 +86,9 @@ export default class Card extends Adw.Bin {
 
         if(props.buttons !== undefined)
             this.buttons = props.buttons;
+
+        if(props.buttonAlign !== undefined)
+            this.buttonAlign = props.buttonAlign;
 
         this.build();
 
@@ -115,29 +121,35 @@ export default class Card extends Adw.Bin {
 
     private build(): void {
         this.set_child(
-            <Gtk.Box hexpand={false} vexpand={false}>
-                {this.image !== null && 
-                    <Gtk.Image $={(self) => {
-                        createSubscription(
-                            createBinding(this, "image"),
-                            () => this.image &&
-                                self.set_from_pixbuf(this.image)
-                        );
-                    }} />
-                }
+            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                <Gtk.Picture contentFit={Gtk.ContentFit.COVER}
+                  $={(self) => {
+                      createSubscription(
+                          createBinding(this, "image"),
+                          () => this.image ?
+                              self.set_pixbuf(this.image)
+                          : self.set_resource(
+                              "/io/github/retrozinndev/vibe/icons/io.github.retrozinndev.vibe-symbolic"
+                          )
+                      );
+                  }} visible={toBoolean(createBinding(this, "image"))}
+                />
                 
-                <Gtk.Label label={createBinding(this, "title")} 
-                  visible={toBoolean(createBinding(this, "title"))}
-                  class={"heading"} xalign={0}
-                />
-                <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
-                  visible={toBoolean(createBinding(this, "description"))}
-                  class={"caption dimmed"} xalign={0}
-                />
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                    <Gtk.Label label={createBinding(this, "title")} 
+                      visible={toBoolean(createBinding(this, "title"))}
+                      class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
+                      xalign={0}
+                    />
+                    <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
+                      visible={toBoolean(createBinding(this, "description"))}
+                      class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
+                    />
+                </Gtk.Box>
                 <Gtk.Separator />
-                <Gtk.FlowBox hexpand homogeneous={true} visible={toBoolean(
+                <Gtk.FlowBox hexpand visible={toBoolean(
                     createBinding(this, "buttons")
-                )}>
+                )} halign={createBinding(this, "buttonAlign")}>
                     <For each={createBinding(this, "buttons").as(b => b!)}>
                         {(button: IconButton|LabelButton) =>
                             <Gtk.Button iconName={isIconButton(button) ?
@@ -147,7 +159,7 @@ export default class Card extends Adw.Bin {
                               } onClicked={() => {
                                   this.emit("button-clicked", button);
                                   button.onClicked?.();
-                              }}
+                              }} class={"flat"}
                             />
                         }
                     </For>
@@ -157,15 +169,15 @@ export default class Card extends Adw.Bin {
     }
 
     emit<
-        Signal extends keyof CardSignalSignatures,
-        Args extends Parameters<CardSignalSignatures[Signal]>
+        Signal extends keyof typeof this.$signals,
+        Args extends Parameters<(typeof this.$signals)[Signal]>
     >(signal: Signal, ...args: Args): void {
         super.emit(signal, ...args);
     }
 
     connect<
-        Signal extends keyof CardSignalSignatures,
-        Callback extends CardSignalSignatures[Signal]
+        Signal extends keyof typeof this.$signals,
+        Callback extends (typeof this.$signals)[Signal]
     >(signal: Signal, callback: Callback): number {
         return super.connect(signal, callback);
     }

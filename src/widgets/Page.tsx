@@ -27,6 +27,9 @@ export default class Page extends Adw.Bin {
     }) {
         super();
 
+        this.set_hexpand(true);
+        this.set_vexpand(true);
+        this.add_css_class("page");
         this.tabName = props.tabName;
         this.title = props.title !== undefined ?
             props.title

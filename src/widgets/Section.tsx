@@ -2,7 +2,7 @@ import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import Pango from "gi://Pango?version=1.0";
 import { createBinding, For } from "gnim";
-import { getter, gtype, property } from "gnim/gobject";
+import { getter, gtype, property, register } from "gnim/gobject";
 import {
     Artist,
     IconButton,
@@ -19,6 +19,7 @@ import Card from "./Card";
 import SmallCard from "./SmallCard";
 
 
+@register({ GTypeName: "VibeSection" })
 export default class Section extends Adw.Bin {
     #content: Array<Song|SongList|Artist> = [];
     #type: NonNullable<VibeSection["type"]> = "row";
@@ -70,10 +71,18 @@ export default class Section extends Adw.Bin {
 
 
         this.set_child(
-            <Gtk.Box>
+            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
                 <Gtk.CenterBox orientation={Gtk.Orientation.HORIZONTAL}>
-                    <Gtk.Label class={"title-1"} label={createBinding(this, "title")} 
-                      ellipsize={Pango.EllipsizeMode.END} $type="start"/>
+                    <Gtk.Box orientation={Gtk.Orientation.VERTICAL} $type="start">
+                        <Gtk.Label class={"title-1"} label={createBinding(this, "title")} 
+                          xalign={0} ellipsize={Pango.EllipsizeMode.END}
+                        />
+
+                        <Gtk.Label class={"body dimmed"} visible={toBoolean(createBinding(this, "description"))}
+                          label={createBinding(this, "description").as(s => s ?? "")}
+                          xalign={0}
+                        />
+                    </Gtk.Box>
 
                     <Gtk.Box class={"linked"} visible={toBoolean(createBinding(this, "headerButtons"))}
                       $type="end">
@@ -133,7 +142,7 @@ export default class Section extends Adw.Bin {
                         {this.#content.map(item => {
                             if(item instanceof Song)
                                 return <Card title={item.name ?? "Unnamed"}
-                                  description={item.artist?.join(', ') ?? "Unknown Artist"}
+                                  description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
                                   image={item.image ?? undefined}
                                   buttons={[{
                                       id: "play-song",
