@@ -1,11 +1,12 @@
 import Adw from "gi://Adw?version=1";
+import Gdk from "gi://Gdk?version=4.0";
 import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, For } from "gnim";
 import { gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, LabelButton } from "libvibe";
-import { createSubscription, omitObjectKeys, toBoolean } from "../modules/util";
+import { createScopedConnection, createSubscription, omitObjectKeys, toBoolean } from "../modules/util";
 
 
 interface CardSignalSignatures extends Adw.Bin.SignalSignatures {
@@ -64,6 +65,16 @@ export default class Card extends Adw.Bin {
                 "buttons"
             ])
         });
+
+        const gestureClick = Gtk.GestureClick.new();
+        
+        this.add_controller(gestureClick);
+        createScopedConnection(
+            gestureClick, "released", () => {
+                if(gestureClick.get_button() === Gdk.BUTTON_PRIMARY) 
+                    this.emit("clicked");
+            }
+        )
 
         this.title = props.title;
 
@@ -133,7 +144,10 @@ export default class Card extends Adw.Bin {
                                 button.iconName : undefined
                               } label={!isIconButton(button) ?
                                 button.label : undefined
-                              }
+                              } onClicked={() => {
+                                  this.emit("button-clicked", button);
+                                  button.onClicked?.();
+                              }}
                             />
                         }
                     </For>
