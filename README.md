@@ -5,6 +5,11 @@ The name is a [recursive acronym](https://en.wikipedia.org/wiki/Recursive_acrony
 > [!warning]
 > This is still in development and doesn't work yet!
 
+## State
+This is only a demonstration, some UI elements don't work as intended.
+![App demo screenshot](/repo/demo.png)
+
+
 ## Goals
 - Play(and maybe stream from tcp/udp) music
 - Implement MPRIS
