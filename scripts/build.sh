@@ -1,4 +1,3 @@
-
 set -e
 
 output="./build"
@@ -39,7 +38,6 @@ Options:
 done
 
 bash ./scripts/clean.sh
-
 mkdir -p $output
 
 # -> Sass (stylesheet)
@@ -57,8 +55,7 @@ glib-compile-resources resources.gresource.xml \
 
 # -> Bundle
 echo "[info] bundling project"
-find ./src/**/*.ts* | sed -e 's/.*/import ".&";/' > $output/concat.ts
-$esbuild --bundle $output/concat.ts \
+$esbuild --bundle ./src/app.ts \
     --outfile=$output/vibe.js \
     --source-root=./src \
     --sourcemap=inline \
