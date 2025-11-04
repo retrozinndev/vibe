@@ -2,8 +2,12 @@ window .container {
   background: #{"@theme_bg_color"};
 }
 
-flowbox flowboxchild:hover,
-listbox listboxchild:hover {
+flowboxchild:hover,
+flowboxchild:focus,
+flowboxchild:focus-visible,
+listboxchild:hover,
+listboxchild:focus,
+listboxchild:focus-visible {
   background: none;
 }
 
