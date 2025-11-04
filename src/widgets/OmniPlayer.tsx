@@ -1,9 +1,8 @@
 import Gtk from "gi://Gtk?version=4.0";
 import Media from "../modules/media";
 import AlbumArt from "./AlbumArt";
-
 import { createBinding, With } from "gnim";
-import { Song } from "libvibe";
+import { Song } from "libvibe/objects";
 
 
 export default () =>

@@ -10,16 +10,20 @@ import { register } from "gnim/gobject";
 import { Vibe } from "libvibe";
 import { programArgs, programInvocationName } from "system";
 import { openMainWindow } from "./Window";
+import Media from "./modules/media";
 import PluginHandler from "./plugins/plugin-handler";
 
+
+const libvibe = {
+    vibe: await import("libvibe"),
+    objects: await import("libvibe/objects"),
+    interfaces: await import("libvibe/interfaces"),
+    plugin: await import("libvibe/plugin")
+};
 
 @register({ GTypeName: "VibeApp" })
 export class App extends Adw.Application {
     private static instance: App;
-
-    public static dataDir = `${GLib.get_user_data_dir()}/vibe`;
-    public static cacheDir = `${GLib.get_user_cache_dir()}/vibe`;
-    public static runtimeDir = `${GLib.get_user_runtime_dir()}/vibe`;
 
     #gresource: Gio.Resource|null = null;
     #license!: string;
@@ -122,21 +126,27 @@ export class App extends Adw.Application {
         return App.instance;
     }
 
-    public main(): void {
+    readonly main = (): void => createRoot(() => {
+        this.#scope = getScope();
+
         Gst.init(null);
         this.loadAssets();
 
+        // add application's libvibe module to globalThis, so plugins can access the same instance
+        Object.keys(libvibe).forEach(key => 
+            Object.assign(globalThis, libvibe[key as keyof typeof libvibe])
+        );
+
         // init libvibe
-        Vibe.getDefault();
+        Vibe.getDefault()
+            .setMedia(Media.getDefault());
 
         // init plugins
         PluginHandler.getDefault();
+        Vibe.getDefault().emit("initialized");
 
-        createRoot(() => {
-            this.#scope = getScope();
-            openMainWindow();
-        });
-    }
+        openMainWindow();
+    });
 
     private loadAssets(): void {
         // add custom icons

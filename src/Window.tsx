@@ -2,7 +2,7 @@ import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, createRoot, createState, For, With } from "gnim";
 import { createSecureAccessorBinding } from "gnim-utils";
-import { Plugin } from "libvibe";
+import { Plugin } from "libvibe/plugin";
 import { App } from "./app";
 import Media from "./modules/media";
 import Home from "./pages/Home";

@@ -1,9 +1,10 @@
-import { register } from "gnim/gobject";
-import Page from "../widgets/Page";
 import Gtk from "gi://Gtk?version=4.0";
 import { createState } from "gnim";
-import { Artist, Section as SectionType, Song, SongList } from "libvibe";
+import { register } from "gnim/gobject";
+import { Section as SectionType } from "libvibe";
+import { Song, SongList, Artist } from "libvibe/objects";
 import PluginHandler from "../plugins/plugin-handler";
+import Page from "../widgets/Page";
 
 
 @register({ GTypeName: "VibePageSearch" })

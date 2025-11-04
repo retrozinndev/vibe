@@ -1,14 +1,13 @@
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
-import { Plugin, Section, Song, Vibe } from "libvibe";
+import { Section } from "libvibe";
+import { Plugin } from "libvibe/plugin";
 
 
 // only built-in plugins can have a different class name from "VibePlugin"(external)
 @register()
 export class PluginLocal extends Plugin {
-
     supportedFormats: Array<string> = [
         "m4a",
         "flac",
@@ -21,9 +20,6 @@ export class PluginLocal extends Plugin {
         super({
             name: "Local",
             description: "Play music from your local files",
-            implements: {
-                sections: true
-            },
             url: "https://github.com/retrozinndev/vibe/blob/main/src/plugins/builtin",
             version: "0.0.1"
         });
@@ -50,22 +46,12 @@ export class PluginLocal extends Plugin {
                        continue;
 
                     // add song
-                    this.songlist.add(new Song({
-                        id: Vibe.getDefault().generateID(),
-                        image: GdkPixbuf.Pixbuf.new_from_resource("/io/github/retrozinndev/vibe/examples/lagtrain.jpg"),
-                        file: `${vibeMusicDir.peek_path()!}/${item.get_name()}`
-                    }));
                 }
             }
         );
     }
 
     async getSections(length?: number, offset?: number): Promise<Array<Section> | null> {
-        return [{
-            title: "Your songs",
-            description: "Songs that have been detected by the Local plugin",
-            content: this.songlist.songs,
-            type: "row"
-        } satisfies Section];
+        return null;
     }
 }

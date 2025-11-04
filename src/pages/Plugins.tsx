@@ -1,10 +1,10 @@
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, createComputed, For } from "gnim";
-import { Plugin } from "libvibe";
+import { register } from "gnim/gobject";
+import { Plugin } from "libvibe/plugin";
 import PluginHandler from "../plugins/plugin-handler";
 import Card from "../widgets/Card";
 import Page from "../widgets/Page";
-import { register } from "gnim/gobject";
 
 
 @register({ GTypeName: "VibePagePlugins" })

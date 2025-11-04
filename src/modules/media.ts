@@ -1,45 +1,37 @@
-import Gst from "gi://Gst?version=1.0";
-import GObject, { getter, gtype, register } from "gnim/gobject";
-import {
-    Media as VibeMedia,
-    MediaSignalSignatures,
-    SongList,
-    Song,
-    Vibe,
-    Queue
-} from "libvibe";
+import GObject, { getter, gtype, property, register } from "gnim/gobject";
+import { Media as VibeMedia, LoopMode, ShuffleMode } from "libvibe/interfaces";
+import { Song, SongList } from "libvibe/objects";
 
 
 /** play and control media from plugins
 * @todo */
 @register({ GTypeName: "VibeMedia" })
 export default class Media extends GObject.Object implements VibeMedia {
-    declare $signals: MediaSignalSignatures;
-    private static instance: Media;
+    private static instance: VibeMedia;
 
-    #gstVersion: string;
-    #queue: Queue|null = null;
+    #queue: SongList|null = null;
     #song: Song|null = new Song({
-        file: "",
-        name: "Nothing is Playing",
-        id: Vibe.getDefault().generateID()
+        name: "Nothing is Playing"
     });
     
     /** the active song, can be null */
     @getter(gtype<Song|null>(Song)) 
     get song() { return this.#song; }
 
-    @getter(gtype<Queue|null>(Queue))
+    @getter(gtype<SongList|null>(SongList))
     get queue() { return this.#queue; }
+
+    @property(gtype<LoopMode>(Number))
+    loop: LoopMode = LoopMode.NONE;
+
+    @property(gtype<ShuffleMode>(Number))
+    shuffle: ShuffleMode = ShuffleMode.NONE;
 
     constructor() {
         super();
-
-        this.#gstVersion = Gst.version_string();
-
     }
 
-    public static getDefault(): Media {
+    public static getDefault(): VibeMedia {
         if(!this.instance)
             this.instance = new Media();
 

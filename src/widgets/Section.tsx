@@ -4,15 +4,13 @@ import Pango from "gi://Pango?version=1.0";
 import { createBinding, For } from "gnim";
 import { getter, gtype, property, register } from "gnim/gobject";
 import {
-    Artist,
     IconButton,
     isIconButton,
     isLabelButton,
     LabelButton,
-    Song,
-    SongList,
     Section as VibeSection
 } from "libvibe";
+import { Artist, Song, SongList } from "libvibe/objects";
 import Media from "../modules/media";
 import { omitObjectKeys, toBoolean } from "../modules/util";
 import Card from "./Card";

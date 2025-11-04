@@ -3,9 +3,8 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import GObject from "gi://GObject?version=2.0";
 import { getter, property, register } from "gnim/gobject";
-import * as Libvibe from "libvibe";
-import { Plugin } from "libvibe";
-import { App } from "../app";
+import { Plugin } from "libvibe/plugin";
+import { Vibe } from "libvibe";
 import { PluginLocal } from "./builtin/local";
 
 
@@ -27,9 +26,6 @@ export default class PluginHandler extends GObject.Object {
     #builtins: Array<Plugin> = [];
     #plugins: Array<Plugin> = [];
     
-    readonly pluginsDir = Gio.File.new_for_path(`${App.dataDir}/plugins`);
-
-
     @getter(Array<Plugin>)
     get plugins() { return [...this.#plugins]; }
 
@@ -41,13 +37,8 @@ export default class PluginHandler extends GObject.Object {
     constructor() {
         super();
 
-        if(!this.pluginsDir.query_exists(null))
-            this.pluginsDir.make_directory_with_parents(null);
-
-        // add application's libvibe module to globalThis, so plugins can access the same instance
-        Object.assign(globalThis, {
-            libvibe: Libvibe
-        });
+        if(!Vibe.pluginsDir.query_exists(null))
+            Vibe.pluginsDir.make_directory_with_parents(null);
 
         this.#builtinPlugins.forEach(pl =>
             this.importBultin(pl).catch(e => 
@@ -55,7 +46,7 @@ export default class PluginHandler extends GObject.Object {
                     pl.name}): ${e.message}\n${e.stack}`)
             ));
 
-        this.pluginsDir.enumerate_children_async(
+        Vibe.pluginsDir.enumerate_children_async(
             "standard::*", 
             Gio.FileQueryInfoFlags.NONE,
             GLib.PRIORITY_DEFAULT,
@@ -69,7 +60,7 @@ export default class PluginHandler extends GObject.Object {
                     if(!/\.js$/.test(item.get_name()))
                         continue;
 
-                    this.importPlugin(`${this.pluginsDir.peek_path()!}/${item.get_name()}`).catch(e => {
+                    this.importPlugin(`${Vibe.pluginsDir.peek_path()!}/${item.get_name()}`).catch(e => {
                         Adw.MessageDialog.new(null, 
                             "Couldn't auto-import plugin", 
                             `An error occurred while importing the plugin "${item.get_name()}": ${e}`
@@ -90,16 +81,26 @@ export default class PluginHandler extends GObject.Object {
         if(!file.query_exists(null))
             throw new Error("Provided file does not exist")
 
-        this.pluginsDir.make_directory_with_parents(null);
-        const pluginFile = Gio.File.new_for_path(`${this.pluginsDir}/${file.get_basename()!}`);
+        const pluginFile = Gio.File.new_for_path(`${Vibe.pluginsDir.peek_path()!}/${file.get_basename()!}`);
         file.copy(pluginFile, Gio.FileCopyFlags.OVERWRITE, null, null); // TODO: implement progress bar; do this asynchronously
-        
 
-        const plugin: {
+        const module: {
+            default: typeof FinalPlugin;
             VibePlugin: typeof FinalPlugin;
-        } = await import(pluginFile.get_path()!);
+        } = (await import(pluginFile.get_path()!));
 
-        const instance = new plugin.VibePlugin();
+        const Plugin = module.default ?? module.VibePlugin;
+
+        if(!Plugin) {
+            const error = "Could not import plugin: class `VibePlugin`(or `_VibePlugin`) not found / not exported";
+            Adw.MessageDialog.new(null, "An error occurred", error);
+
+            throw new Error(error);
+        }
+
+        const instance = new Plugin();
+
+        console.log("imported plugin: " + instance.name + "!");
         instance.status = "init";
         this.#plugins.push(instance);
         this.notify("plugins");

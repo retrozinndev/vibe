@@ -1,11 +1,12 @@
-import Gtk from "gi://Gtk?version=4.0";
-import Page from "../widgets/Page";
-import { createBinding, createState, With } from "gnim";
-import PluginHandler from "../plugins/plugin-handler";
-import { Plugin, Section as SectionType } from "libvibe";
-import Section from "../widgets/Section";
-import { register } from "gnim/gobject";
 import Adw from "gi://Adw?version=1";
+import Gtk from "gi://Gtk?version=4.0";
+import { createBinding, createState, With } from "gnim";
+import { register } from "gnim/gobject";
+import { Section as SectionType } from "libvibe";
+import { Plugin } from "libvibe/plugin";
+import PluginHandler from "../plugins/plugin-handler";
+import Page from "../widgets/Page";
+import Section from "../widgets/Section";
 
 
 @register({ GTypeName: "VibePageHome" })
@@ -29,7 +30,7 @@ export default class Home extends Page {
                             const result = plugin.getSections();
 
                             if(result instanceof Promise) {
-                                plugin.getSections()!.then((sects) => {
+                                result.then((sects) => {
                                     if(!sects) return;
                                     sections = sects;
                                     setFinished(true);

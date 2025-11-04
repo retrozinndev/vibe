@@ -1,6 +1,5 @@
 import Gtk from "gi://Gtk?version=4.0";
 import Media from "../modules/media";
-
 import { createBinding } from "gnim";
 
 
