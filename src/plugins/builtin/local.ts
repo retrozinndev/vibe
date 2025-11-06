@@ -1,7 +1,6 @@
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
-import { Section } from "libvibe";
 import { Plugin } from "libvibe/plugin";
 
 
@@ -49,9 +48,5 @@ export class PluginLocal extends Plugin {
                 }
             }
         );
-    }
-
-    async getSections(length?: number, offset?: number): Promise<Array<Section> | null> {
-        return null;
     }
 }

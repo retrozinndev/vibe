@@ -4,11 +4,11 @@ import { register } from "gnim/gobject";
 import { Plugin } from "libvibe/plugin";
 import PluginHandler from "../plugins/plugin-handler";
 import Card from "../widgets/Card";
-import Page from "../widgets/Page";
+import Tab from "../widgets/Tab";
 
 
-@register({ GTypeName: "VibePagePlugins" })
-export default class Plugins extends Page {
+@register({ GTypeName: "VibeTabPlugins" })
+export default class Plugins extends Tab {
     constructor() {
         super({
             tabName: "Plugins",

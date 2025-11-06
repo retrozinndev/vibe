@@ -5,12 +5,13 @@ import { register } from "gnim/gobject";
 import { Section as SectionType } from "libvibe";
 import { Plugin } from "libvibe/plugin";
 import PluginHandler from "../plugins/plugin-handler";
-import Page from "../widgets/Page";
+import Tab from "../widgets/Tab";
 import Section from "../widgets/Section";
+import { createSubscription } from "gnim-utils";
 
 
-@register({ GTypeName: "VibePageHome" })
-export default class Home extends Page {
+@register({ GTypeName: "VibeTabHome" })
+export default class Home extends Tab {
 
     constructor() {
         super({
@@ -19,6 +20,14 @@ export default class Home extends Page {
             iconName: "go-home-symbolic"
         });
 
+        // show only if it's implemented by the plugin
+        createSubscription(
+            createBinding(PluginHandler.getDefault(), "plugin"),
+            () => this.set_visible(
+                PluginHandler.getDefault().plugin.isImplemented("recommendations")
+            )
+        );
+
         this.set_child(
             <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
                 <With value={createBinding(PluginHandler.getDefault(), "plugin")}>
@@ -26,8 +35,8 @@ export default class Home extends Page {
                         const [finished, setFinished] = createState(false);
                         let sections: Array<SectionType>;
 
-                        if(plugin.implements.sections) {
-                            const result = plugin.getSections();
+                        if(plugin.isImplemented("recommendations")) {
+                            const result = plugin.getRecommendations();
 
                             if(result instanceof Promise) {
                                 result.then((sects) => {
@@ -43,7 +52,7 @@ export default class Home extends Page {
                             }
                         }
 
-                        return plugin.implements.sections ?
+                        return plugin.isImplemented("recommendations") ?
                             <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
                                 <With value={finished}>
                                     {(hasFinished: boolean) =>

@@ -1,14 +1,15 @@
 import Gtk from "gi://Gtk?version=4.0";
-import { createState } from "gnim";
+import { createBinding, createState } from "gnim";
 import { register } from "gnim/gobject";
 import { Section as SectionType } from "libvibe";
 import { Song, SongList, Artist } from "libvibe/objects";
 import PluginHandler from "../plugins/plugin-handler";
-import Page from "../widgets/Page";
+import Tab from "../widgets/Tab";
+import { createSubscription } from "gnim-utils";
 
 
-@register({ GTypeName: "VibePageSearch" })
-export default class Search extends Page {
+@register({ GTypeName: "VibeTabSearch" })
+export default class Search extends Tab {
     
     constructor() {
         super({
@@ -19,6 +20,13 @@ export default class Search extends Page {
 
         const [impl, setImplements] = createState(false);
         const [results, setResults] = createState([] as Array<Song|Artist|SongList|SectionType>);
+
+        createSubscription(
+            createBinding(PluginHandler.getDefault(), "plugin"),
+            () => this.set_visible(
+                PluginHandler.getDefault().plugin.isImplemented("search")
+            )
+        );
 
         this.set_child(
             <Gtk.Box class={"page-search"} orientation={Gtk.Orientation.VERTICAL}>

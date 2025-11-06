@@ -5,19 +5,19 @@ import { createSecureAccessorBinding } from "gnim-utils";
 import { Plugin } from "libvibe/plugin";
 import { App } from "./app";
 import Media from "./modules/media";
-import Home from "./pages/Home";
-import Library from "./pages/Library";
-import Search from "./pages/Search";
+import Home from "./tabs/Home";
+import Library from "./tabs/Library";
+import Search from "./tabs/Search";
 import PluginHandler from "./plugins/plugin-handler";
 import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
-import Page from "./widgets/Page";
+import Tab from "./widgets/Tab";
 
 
 export const media = new Media();
 
 export const openMainWindow = () => createRoot((dispose) => {
-    const pages: Array<Page> = [
+    const pages: Array<Tab> = [
         new Home(),
         new Search(),
         new Library()
@@ -77,6 +77,7 @@ export const openMainWindow = () => createRoot((dispose) => {
                         {pages.map(pg => 
                             <NavigationTabButton iconName={createBinding(pg, "iconName")}
                               actionClicked={() => _setPage(pg)}
+                              visible={createBinding(pg, "visible")}
                               label={createBinding(pg, "tabName")}
                               class={page.as(p => p.tabName === pg.tabName ? "raised" : "flat")}
                             />
@@ -86,7 +87,7 @@ export const openMainWindow = () => createRoot((dispose) => {
                 </Adw.NavigationPage>
 
                 {/* page */}
-                <Adw.NavigationPage title={createSecureAccessorBinding<Page>(
+                <Adw.NavigationPage title={createSecureAccessorBinding<Tab>(
                     page, "title", ""
                 )} name={"navpage"}>
                     <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
@@ -97,7 +98,7 @@ export const openMainWindow = () => createRoot((dispose) => {
                               transitionDuration={400}>
                             
                                 <With value={page}>
-                                    {(page: Page) => page}
+                                    {(page: Tab) => page}
                                 </With>
                             </Gtk.Stack>
                         </Gtk.Box>

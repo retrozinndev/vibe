@@ -1,10 +1,10 @@
 import Gtk from "gi://Gtk?version=4.0";
-import Page from "../widgets/Page";
+import Tab from "../widgets/Tab";
 import { register } from "gnim/gobject";
 
 
-@register({ GTypeName: "VibePageLibrary" })
-export default class Library extends Page {
+@register({ GTypeName: "VibeTabLibrary" })
+export default class Library extends Tab {
     constructor() {
         super({
             tabName: "Library",

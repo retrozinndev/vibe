@@ -146,6 +146,7 @@ export class App extends Adw.Application {
         Vibe.getDefault().emit("initialized");
 
         openMainWindow();
+        PluginHandler.getDefault().notify("plugin");
     });
 
     private loadAssets(): void {

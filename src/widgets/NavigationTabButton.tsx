@@ -7,6 +7,7 @@ export default (props: {
     iconName: string | Accessor<string>;
     label: string | Accessor<string>;
     spacing?: number | Accessor<number>;
+    visible?: boolean | Accessor<boolean>;
     class?: string | Accessor<string>;
     actionClicked?: () => void;
     $?: (self: Gtk.Button) => void;
@@ -14,6 +15,7 @@ export default (props: {
     return <Gtk.Button class={props.class !== undefined ?
           transform(props.class, (c) => `navigation-tab-button ${c}`)
       : "navigation-tab-button flat"} $={props.$} 
+      visible={props.visible}
       onClicked={() => props.actionClicked?.()}>
         <Gtk.Box spacing={props.spacing ?? 6}>
             <Gtk.Image iconName={props.iconName} />
