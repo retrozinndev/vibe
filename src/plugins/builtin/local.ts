@@ -1,6 +1,7 @@
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
+import { Section } from "libvibe";
 import { Plugin } from "libvibe/plugin";
 
 
@@ -20,7 +21,10 @@ export class PluginLocal extends Plugin {
             name: "Local",
             description: "Play music from your local files",
             url: "https://github.com/retrozinndev/vibe/blob/main/src/plugins/builtin",
-            version: "0.0.1"
+            version: "0.0.1",
+            implements: {
+                recommendations: true
+            }
         });
 
         // load songs from default directory (temporary, i'll make a way to configure it later)
@@ -48,5 +52,16 @@ export class PluginLocal extends Plugin {
                 }
             }
         );
+    }
+
+    getRecommendations(length?: number, offset?: number): Promise<Array<Section> | null> | Array<Section> | null {
+        return [{
+                title: "A test section",
+                description: "does it work?"
+            }, {
+                title: "Another section for testing",
+                description: "It probably does work!"
+            }
+        ] satisfies Array<Section>;
     }
 }
