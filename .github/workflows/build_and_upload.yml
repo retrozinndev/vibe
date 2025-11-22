@@ -3,10 +3,10 @@ name: "Build and Upload"
 on:
   push:
     branches: [ "main" ]
-    paths: [ "src/", "lib/" ]
+    paths: [ "src/**", "package.json" ]
   pull_request:
     branches: [ "main" ]
-    paths: [ "src/", "lib/" ]
+    paths: [ "src/**", "package.json" ]
   workflow_dispatch:
 
 
@@ -30,7 +30,6 @@ jobs:
       - name: "Install dependencies"
         run: |
           pnpm install
-          sudo apt update -y && sudo apt upgrade -y
           sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
@@ -40,7 +39,6 @@ jobs:
         uses: "actions/upload-artifact@v5"
         with:
           name: "build-assets"
-          
           path: |
             package.json
             build/
@@ -64,5 +62,5 @@ jobs:
       - name: "Upload artifact"
         uses: "actions/upload-artifact@v5"
         with:
-          name: "vibe-$VIBE_VERSION"
+          name: "vibe-${{ env.VIBE_VERSION }}"
           path: "build/release"
