@@ -33,34 +33,10 @@ jobs:
           sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
-        run: "pnpm build:release -e \"pnpm dlx esbuild\""
+        run: "pnpm build -d -e \"pnpm dlx esbuild\""
 
-      - name: "Upload for next job"
+      - name: "Upload"
         uses: "actions/upload-artifact@v5"
         with:
-          name: "build-assets"
-          path: |
-            package.json
-            build/
-
-  upload:
-    runs-on: ubuntu-latest
-    needs: setup_and_build
-
-    steps:
-      - name: "Load from previous job"
-        uses: "actions/download-artifact@v6"
-        with:
-          name: "build-assets"
-
-      - name: "Install jq"
-        run: "sudo apt install -y jq"
-
-      - name: "Setup environment"
-        run: "export VIBE_VERSION=\"$(cat package.json | jq -r .version)\""
-
-      - name: "Upload artifact"
-        uses: "actions/upload-artifact@v5"
-        with:
-          name: "vibe-${{ env.VIBE_VERSION }}"
-          path: "build/release"
+          name: "vibe"
+          path: "build/"
