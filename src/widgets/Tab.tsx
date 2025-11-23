@@ -1,39 +1,53 @@
 import Adw from "gi://Adw?version=1";
 import { property, register } from "gnim/gobject";
+import { Page } from "../widgets/Page";
+import { Vibe } from "libvibe";
 
 
-@register({ GTypeName: "VibePage" })
-export default class Page extends Adw.Bin {
+@register({ GTypeName: "VibeTab" })
+export default class Tab extends Adw.Bin {
+
+    readonly id: any;
+
+    #page: Page|null = null;
 
     /** icon of the page/tab, displayed in the sidebar together
     * with its name */
     @property(String)
     iconName: string = "tab-new-symbolic";
 
-    /** name of the page/tab, displayed in the sidebar together 
+    /** name of the tab, displayed in the sidebar together 
     * with the icon */
-    @property(String)
-    tabName: string;
-
-    /** page's title, shows up in the HeaderBar widget in the 
-    * app window */
     @property(String)
     title: string;
 
+    /** get the page for this tab, can be null (usually won't be) */
+    get page() { return this.#page; }
+
+    /** set the page for this tab. you can't set this if it was already set before */
+    set page(newPage: Page|null) {
+        if(this.#page || newPage === null)
+            throw new Error("Cannot set the page of a Tab after it has already been set");
+
+        this.#page = newPage;
+    }
+
     constructor(props: {
-        tabName: string;
+        title: string;
         iconName?: string;
-        title?: string;
+        id?: any;
+        page?: Page;
     }) {
         super();
 
         this.set_hexpand(true);
         this.set_vexpand(true);
-        this.add_css_class("page");
-        this.tabName = props.tabName;
-        this.title = props.title !== undefined ?
-            props.title
-        : this.tabName;
+        this.add_css_class("tab");
+        this.title = props.title;
+        if(props.page !== undefined)
+            this.#page = props.page;
+
+        this.id = props.id ?? Vibe.getDefault().generateID();
 
         if(props.iconName !== undefined)
             this.iconName = props.iconName;

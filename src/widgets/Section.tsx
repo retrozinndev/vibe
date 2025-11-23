@@ -137,40 +137,43 @@ export default class Section extends Adw.Bin {
                     : <Gtk.ScrolledWindow vscrollbarPolicy={Gtk.PolicyType.NEVER} 
                       hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} hexpand>
 
-                        {this.#content.map(item => {
-                            if(item instanceof Song)
-                                return <Card title={item.name ?? "Unnamed"}
-                                  description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
-                                  image={item.image ?? undefined}
-                                  buttons={[{
-                                      id: "play-song",
-                                      iconName: "media-playback-start-symbolic",
-                                      onClicked: () => Media.getDefault().playSong(item, 0)
-                                  }]}
-                                />
+                        {this.#content.map(item => 
+                            <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
+                              maximumSize={130} halign={Gtk.Align.START} hexpand>
+                                {(() => {
+                                    if(item instanceof Song)
+                                        return <Card title={item.name ?? "Unnamed"}
+                                          description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
+                                          image={item.image ?? undefined}
+                                          buttons={[{
+                                              id: "play-song",
+                                              iconName: "media-playback-start-symbolic",
+                                              onClicked: () => Media.getDefault().playSong(item, 0)
+                                          }]}
+                                        />
 
-                            if(item instanceof Artist)
-                                return <Card title={item.name ?? "Unknown Artist"}
-                                  image={item.image ?? undefined}
-                                  buttons={[{
-                                      id: "play-song",
-                                      iconName: "media-playback-start-symbolic",
-                                      onClicked: () => { /* TODO: redirect to artist page */ }
-                                  }]}
-                                />
+                                    if(item instanceof Artist)
+                                        return <Card title={item.name ?? "Unknown Artist"}
+                                          image={item.image ?? undefined}
+                                          buttons={[{
+                                              id: "play-song",
+                                              iconName: "media-playback-start-symbolic",
+                                              onClicked: () => { /* TODO: redirect to artist page */ }
+                                          }]}
+                                        />
 
-                            return <Card title={item.title ?? "No Title"} 
-                              description={item.description ?? undefined}
-                              // TODO: wait for internet provider's DNS to get back :broken_heart:, 
-                              // so I can add an image to the SongList(I already committed the feature,
-                              // but i can't push it because of the CLARO BR DNS blocking almost everything)
-                              buttons={[{
-                                  id: "play-songlist",
-                                  iconName: "media-playback-start-symbolic",
-                                  onClicked: () => Media.getDefault().playList(item, 0)
-                              }]}
-                            />
-                        })}
+                                    return <Card title={item.title ?? "No Title"}
+                                      description={item.description ?? undefined}
+                                      image={item.image ?? undefined}
+                                      buttons={[{
+                                          id: "play-songlist",
+                                          iconName: "media-playback-start-symbolic",
+                                          onClicked: () => Media.getDefault().playList(item, 0)
+                                      }]}
+                                    />
+                                })()}
+                            </Adw.Clamp>
+                        )}
                     </Gtk.ScrolledWindow>
                 }
             </Gtk.Box> as Gtk.Box

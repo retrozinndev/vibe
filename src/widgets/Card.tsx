@@ -41,6 +41,9 @@ export default class Card extends Adw.Bin {
     @property(gtype<string|null>(String))
     description: string|null = null;
 
+    @property(Number)
+    imageHeight: number = 95;
+
     /** the card's image in pixbuf format, can be null */
     @property(gtype<GdkPixbuf.Pixbuf|null>(GdkPixbuf.Pixbuf))
     image: GdkPixbuf.Pixbuf|null = null;
@@ -57,6 +60,7 @@ export default class Card extends Adw.Bin {
         description?: string;
         image?: GdkPixbuf.Pixbuf|string|Gio.File;
         buttonAlign?: Gtk.Align;
+        imageHeight?: number;
         buttons?: Array<IconButton | LabelButton>;
     } & Partial<Adw.Bin.ConstructorProps>) {
         super({
@@ -80,6 +84,9 @@ export default class Card extends Adw.Bin {
         )
 
         this.title = props.title;
+
+        if(props.imageHeight !== undefined)
+            this.imageHeight = props.imageHeight;
 
         if(props.description !== undefined)
             this.description = props.description;
@@ -122,7 +129,7 @@ export default class Card extends Adw.Bin {
     private build(): void {
         this.set_child(
             <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                <Gtk.Picture contentFit={Gtk.ContentFit.COVER}
+                <Gtk.Picture contentFit={Gtk.ContentFit.COVER} heightRequest={createBinding(this, "imageHeight")}
                   $={(self) => {
                       createSubscription(
                           createBinding(this, "image"),
