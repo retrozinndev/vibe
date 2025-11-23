@@ -42,14 +42,17 @@ export default class Section extends Adw.Bin {
 
 
     constructor(props: VibeSection & Partial<Gtk.Box.ConstructorProps>) {
-        super(omitObjectKeys(props, [
-            "content",
-            "title",
-            "description",
-            "type",
-            "endButton",
-            "headerButtons"
-        ]));
+        super({
+            ...omitObjectKeys(props, [
+                "content",
+                "title",
+                "description",
+                "type",
+                "endButton",
+                "headerButtons"
+            ]),
+            cssName: "section"
+        });
 
         this.title = props.title;
         if(props.description !== undefined)
@@ -72,11 +75,11 @@ export default class Section extends Adw.Bin {
             <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
                 <Gtk.CenterBox orientation={Gtk.Orientation.HORIZONTAL}>
                     <Gtk.Box orientation={Gtk.Orientation.VERTICAL} $type="start">
-                        <Gtk.Label class={"title-1"} label={createBinding(this, "title")} 
+                        <Gtk.Label class={"title title-1"} label={createBinding(this, "title")} 
                           xalign={0} ellipsize={Pango.EllipsizeMode.END}
                         />
 
-                        <Gtk.Label class={"body dimmed"} visible={toBoolean(createBinding(this, "description"))}
+                        <Gtk.Label class={"description body dimmed"} visible={toBoolean(createBinding(this, "description"))}
                           label={createBinding(this, "description").as(s => s ?? "")}
                           xalign={0}
                         />
@@ -139,7 +142,7 @@ export default class Section extends Adw.Bin {
 
                         {this.#content.map(item => 
                             <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
-                              maximumSize={130} halign={Gtk.Align.START} hexpand>
+                              maximumSize={180} halign={Gtk.Align.START} hexpand>
                                 {(() => {
                                     if(item instanceof Song)
                                         return <Card title={item.name ?? "Unnamed"}

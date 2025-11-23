@@ -57,3 +57,11 @@ page .page-search {
     padding: 10px 0;
   }
 }
+
+section {
+  margin-bottom: 16px;
+
+  & .description {
+    margin-bottom: 6px;
+  }
+}

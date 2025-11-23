@@ -21,6 +21,7 @@ export class Home extends Page {
             tab
         });
 
+        this.get_content_widget().set_spacing(16);
         this.get_content_widget().append(
             <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
                 <With value={createBinding(PluginHandler.getDefault(), "plugin")}>
