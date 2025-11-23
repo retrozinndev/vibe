@@ -5,16 +5,19 @@ import { Plugin } from "libvibe/plugin";
 import PluginHandler from "../plugins/plugin-handler";
 import Card from "../widgets/Card";
 import Tab from "../widgets/Tab";
+import { PluginPage } from "../pages/Plugin";
 
 
 @register({ GTypeName: "VibeTabPlugins" })
 export default class Plugins extends Tab {
     constructor() {
         super({
-            tabName: "Plugins",
-            iconName: "folder-extensions-symbolic",
-            title: "Manage plugins"
+            title: "Plugins",
+            id: "plugins",
+            iconName: "folder-extensions-symbolic"
         });
+
+        this.page = new PluginPage(this);
 
         const plugins = createBinding(PluginHandler.getDefault(), "plugins");
         const builtIn = plugins.as(pls => pls.filter(pl => 
