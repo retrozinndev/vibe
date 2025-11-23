@@ -6,6 +6,8 @@
     </gresource>
     <gresource prefix="/io/github/retrozinndev/vibe/icons">
         <file alias="library-symbolic.svg">resources/icons/library-symbolic.svg</file>
+        <file alias="test-pass-symbolic.svg">resources/icons/test-pass-symbolic.svg</file>
+        <file alias="plus-circle-outline-symbolic.svg">resources/icons/plus-circle-outline-symbolic.svg</file>
         <file alias="io.github.retrozinndev.vibe-symbolic.svg">resources/icons/folder-music-symbolic.svg</file>
     </gresource>
     <gresource prefix="/io/github/retrozinndev/vibe/data">
