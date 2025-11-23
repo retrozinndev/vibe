@@ -5,19 +5,18 @@ import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio?version=2.0";
 import Gst from "gi://Gst?version=1.0";
 import Gtk from "gi://Gtk?version=4.0";
+import { Vibe } from "libvibe";
+import PluginHandler from "./plugins/plugin-handler";
+import Media from "./modules/media";
 import { createRoot, getScope, Scope } from "gnim";
 import { register } from "gnim/gobject";
-import { Vibe } from "libvibe";
 import { programArgs, programInvocationName } from "system";
 import { openMainWindow } from "./Window";
-import Media from "./modules/media";
-import PluginHandler from "./plugins/plugin-handler";
 
 
 const libvibe = {
     vibe: await import("libvibe"),
     objects: await import("libvibe/objects"),
-    interfaces: await import("libvibe/interfaces"),
     plugin: await import("libvibe/plugin")
 };
 

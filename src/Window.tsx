@@ -1,29 +1,45 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import { createBinding, createRoot, createState, For, With } from "gnim";
+import { Accessor, createBinding, createRoot } from "gnim";
 import { createSecureAccessorBinding } from "gnim-utils";
-import { Plugin } from "libvibe/plugin";
 import { App } from "./app";
 import Media from "./modules/media";
 import Home from "./tabs/Home";
 import Library from "./tabs/Library";
 import Search from "./tabs/Search";
-import PluginHandler from "./plugins/plugin-handler";
 import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
 import Tab from "./widgets/Tab";
+import PluginSelector from "./widgets/PluginSelector";
+import { Page as PageWidget } from "./widgets/Page";
+import { PageModal } from "libvibe/interfaces";
+import { Pages } from "./pages";
 
 
+let pages: Pages;
 export const media = new Media();
+export function getPages(): Pages {
+    return pages!;
+}
 
 export const openMainWindow = () => createRoot((dispose) => {
-    const pages: Array<Tab> = [
+    const tabs: Array<Tab> = [
         new Home(),
         new Search(),
         new Library()
     ];
 
-    const [page, _setPage] = createState(pages[1]);
+    pages = <Pages initialPage={new PageWidget({
+          modal: PageModal.CUSTOM,
+          title: "Welcome to Vibe!"
+      })} 
+      transitionType={Gtk.StackTransitionType.SLIDE_DOWN} transitionDuration={400} 
+      $={(self) => {
+          tabs.forEach(tab => tab.page &&
+              self.add_named(tab.page, String(tab.id))
+          );
+      }}
+    /> as Pages;
 
     return <Adw.ApplicationWindow title={"Vibe"} hideOnClose={false} 
       visible onCloseRequest={() => dispose()} application={App.get_default()}
@@ -49,37 +65,17 @@ export const openMainWindow = () => createRoot((dispose) => {
                               }}
                             />
                             <Gtk.Label class="heading" label="Vibe" $type="title" />
-                            <Gtk.MenuButton class={"flat plugin-selection"} $type="end">
-                                <Gtk.Popover $type="popover">
-                                    <For each={createBinding(PluginHandler.getDefault(), "plugins")}>
-                                        {(plugin: Plugin) => 
-                                            <Gtk.Button class={"flat"} onClicked={() => {
-                                                if(PluginHandler.getDefault().plugin.id !== plugin.id)
-                                                    PluginHandler.getDefault().plugin = plugin
-                                            }}>
-                                                
-                                                <Gtk.Box hexpand spacing={6}>
-                                                    <Gtk.Image iconName={"folder-extensions-symbolic"} />
-                                                    <Gtk.Label label={plugin.name} hexpand />
-                                                    <Gtk.Image iconName={"object-select-symbolic"}
-                                                      visible={createBinding(
-                                                          PluginHandler.getDefault(), "plugin"
-                                                      ).as(p => p.id === plugin.id)}
-                                                    />
-                                                </Gtk.Box>
-                                            </Gtk.Button>
-                                        }
-                                    </For>
-                                </Gtk.Popover>
-                            </Gtk.MenuButton>
+                            <PluginSelector $type="end" />
                         </Adw.HeaderBar>
 
-                        {pages.map(pg => 
-                            <NavigationTabButton iconName={createBinding(pg, "iconName")}
-                              actionClicked={() => _setPage(pg)}
-                              visible={createBinding(pg, "visible")}
-                              label={createBinding(pg, "tabName")}
-                              class={page.as(p => p.tabName === pg.tabName ? "raised" : "flat")}
+                        {tabs.map(tab => 
+                            <NavigationTabButton iconName={createBinding(tab, "iconName")}
+                              actionClicked={() => pages.set_visible_child_name(tab.id)} // all tab pages are already added, so we can do that
+                              visible={createBinding(tab, "visible")}
+                              label={createBinding(tab, "title")}
+                              class={createBinding(pages, "currentPage").as(page =>
+                                  tab.id === page.id ? "raised" : "flat"
+                              )}
                             />
                         )}
 
@@ -87,20 +83,13 @@ export const openMainWindow = () => createRoot((dispose) => {
                 </Adw.NavigationPage>
 
                 {/* page */}
-                <Adw.NavigationPage title={createSecureAccessorBinding<Tab>(
-                    page, "title", ""
+                <Adw.NavigationPage title={createSecureAccessorBinding<PageWidget>(
+                    createBinding(pages, "visibleChild") as Accessor<PageWidget>, "title", ""
                 )} name={"navpage"}>
                     <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
                         <Adw.HeaderBar class={"flat"} />
                         <Gtk.Box class={"content"} vexpand>
-                            {/* TODO: implement transitions on page change (we need a better structure for that) */}
-                            <Gtk.Stack transitionType={Gtk.StackTransitionType.CROSSFADE}
-                              transitionDuration={400}>
-                            
-                                <With value={page}>
-                                    {(page: Tab) => page}
-                                </With>
-                            </Gtk.Stack>
+                            {pages}
                         </Gtk.Box>
                     </Gtk.Box>
                 </Adw.NavigationPage>
