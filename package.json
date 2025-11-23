@@ -8,11 +8,11 @@
     "url": "https://github.com/retrozinndev/Vibe/issues"
   },
   "keywords": [
-      "music-player", 
-      "gtk4",
-      "libadwaita",
-      "gnim",
-      "gir"
+    "music-player",
+    "gtk4",
+    "libadwaita",
+    "gnim",
+    "gir"
   ],
   "repository": {
     "type": "git",
@@ -34,9 +34,9 @@
   "devDependencies": {
     "esbuild": "^0.25.12",
     "gnim": "^1.8.2",
-    "gnim-utils": "github:retrozinndev/gnim-utils#1.0.0",
+    "gnim-utils": "github:retrozinndev/gnim-utils",
     "libvibe": "github:retrozinndev/libvibe",
-    "sass": "^1.93.3",
+    "sass": "^1.94.2",
     "typescript": "^5.9.3"
   }
 }
