@@ -27,7 +27,7 @@ export default class PluginHandler extends GObject.Object {
     #plugins: Array<Plugin> = [];
     
     @getter(Array<Plugin>)
-    get plugins() { return [...this.#plugins]; }
+    get plugins() { return this.#plugins; }
 
     /** the currently active plugin */
     @property(Plugin)
