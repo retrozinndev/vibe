@@ -35,11 +35,12 @@ listboxchild:focus-visible {
   border-radius: 20px;
 }
 
-.page {
+page {
   padding: 16px;
+  padding-bottom: 0;
 }
 
-.page .page-search {
+page .page-search {
   & .search-entry {
     $height: 48px;
 
