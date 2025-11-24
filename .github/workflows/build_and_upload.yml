@@ -3,15 +3,15 @@ name: "Build and Upload"
 on:
   push:
     branches: [ "main" ]
-    paths: [ "src/**", "package.json" ]
+    paths: [ "src/**", ".github/workflows/**", "package.json" ]
   pull_request:
     branches: [ "main" ]
-    paths: [ "src/**", "package.json" ]
+    paths: [ "src/**", ".github/workflows/**", "package.json" ]
   workflow_dispatch:
 
 
 jobs:
-  setup_and_build:
+  build:
     runs-on: ubuntu-latest
 
     steps:
@@ -33,7 +33,7 @@ jobs:
           sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
-        run: "pnpm build -d -e \"pnpm dlx esbuild\""
+        run: "pnpm build -d -r \"./resources.gresource\" -e \"pnpm dlx esbuild\""
 
       - name: "Upload"
         uses: "actions/upload-artifact@v5"
