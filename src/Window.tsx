@@ -11,16 +11,13 @@ import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
 import Tab from "./widgets/Tab";
 import PluginSelector from "./widgets/PluginSelector";
-import { Page as PageWidget } from "./widgets/Page";
+import { Page, Page as PageWidget } from "./widgets/Page";
 import { PageModal } from "libvibe/interfaces";
 import { Pages } from "./pages";
 
 
 let pages: Pages;
 export const media = new Media();
-export function getPages(): Pages {
-    return pages!;
-}
 
 export const openMainWindow = () => createRoot((dispose) => {
     const tabs: Array<Tab> = [
@@ -33,7 +30,7 @@ export const openMainWindow = () => createRoot((dispose) => {
           modal: PageModal.CUSTOM,
           title: "Welcome to Vibe!"
       })} 
-      transitionType={Gtk.StackTransitionType.SLIDE_DOWN} transitionDuration={400} 
+      transitionType={Gtk.StackTransitionType.SLIDE_LEFT} transitionDuration={400} 
       $={(self) => {
           tabs.forEach(tab => tab.page &&
               self.add_named(tab.page, String(tab.id))
@@ -68,9 +65,28 @@ export const openMainWindow = () => createRoot((dispose) => {
                             <PluginSelector $type="end" />
                         </Adw.HeaderBar>
 
-                        {tabs.map(tab => 
+                        {tabs.map((tab, i, arr) => 
                             <NavigationTabButton iconName={createBinding(tab, "iconName")}
-                              actionClicked={() => pages.set_visible_child_name(tab.id)} // all tab pages are already added, so we can do that
+                              actionClicked={() => {
+                                  // all tab pages are already added, so we can do that
+                                  let currentPageIndex: number;
+                                  
+                                  for(let i = 0; i < arr.length; i++) {
+                                      const tab = arr[i];
+
+                                      if(pages.currentPage.id === tab.id) {
+                                          currentPageIndex = i;
+                                          break;
+                                      }
+                                  }
+                                  
+                                  pages.set_visible_child_full(
+                                      tab.id,
+                                      i > currentPageIndex! ?
+                                          Gtk.StackTransitionType.SLIDE_UP
+                                      : Gtk.StackTransitionType.SLIDE_DOWN
+                                  );
+                              }} 
                               visible={createBinding(tab, "visible")}
                               label={createBinding(tab, "title")}
                               class={createBinding(pages, "currentPage").as(page =>
