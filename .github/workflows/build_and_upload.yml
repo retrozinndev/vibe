@@ -33,7 +33,7 @@ jobs:
           sudo apt install -y libglib2.0-dev build-essential gjs
 
       - name: "Build project"
-        run: "pnpm build -d -r \"./resources.gresource\" -e \"pnpm dlx esbuild\""
+        run: "pnpm build -d -b -r \"./resources.gresource\" -e \"pnpm dlx esbuild\""
 
       - name: "Upload"
         uses: "actions/upload-artifact@v5"
