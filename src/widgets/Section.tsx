@@ -139,44 +139,47 @@ export default class Section extends Adw.Bin {
                         </Gtk.FlowBox>
                     : <Gtk.ScrolledWindow vscrollbarPolicy={Gtk.PolicyType.NEVER} 
                       hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} hexpand>
+                        <Gtk.Box orientation={Gtk.Orientation.HORIZONTAL} halign={Gtk.Align.START}
+                          spacing={10}>
 
-                        {this.#content.map(item => 
-                            <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
-                              maximumSize={180} halign={Gtk.Align.START} hexpand>
-                                {(() => {
-                                    if(item instanceof Song)
-                                        return <Card title={item.name ?? "Unnamed"}
-                                          description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
+                            {this.#content.map(item => 
+                                <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
+                                  maximumSize={180} halign={Gtk.Align.START}>
+                                    {(() => {
+                                        if(item instanceof Song)
+                                            return <Card title={item.name ?? "Unnamed"}
+                                              description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
+                                              image={item.image ?? undefined}
+                                              buttons={[{
+                                                  id: "play-song",
+                                                  iconName: "media-playback-start-symbolic",
+                                                  onClicked: () => Media.getDefault().playSong(item, 0)
+                                              }]}
+                                            />
+
+                                        if(item instanceof Artist)
+                                            return <Card title={item.name ?? "Unknown Artist"}
+                                              image={item.image ?? undefined}
+                                              buttons={[{
+                                                  id: "play-song",
+                                                  iconName: "media-playback-start-symbolic",
+                                                  onClicked: () => { /* TODO: redirect to artist page */ }
+                                              }]}
+                                            />
+
+                                        return <Card title={item.title ?? "No Title"}
+                                          description={item.description ?? undefined}
                                           image={item.image ?? undefined}
                                           buttons={[{
-                                              id: "play-song",
+                                              id: "play-songlist",
                                               iconName: "media-playback-start-symbolic",
-                                              onClicked: () => Media.getDefault().playSong(item, 0)
+                                              onClicked: () => Media.getDefault().playList(item, 0)
                                           }]}
                                         />
-
-                                    if(item instanceof Artist)
-                                        return <Card title={item.name ?? "Unknown Artist"}
-                                          image={item.image ?? undefined}
-                                          buttons={[{
-                                              id: "play-song",
-                                              iconName: "media-playback-start-symbolic",
-                                              onClicked: () => { /* TODO: redirect to artist page */ }
-                                          }]}
-                                        />
-
-                                    return <Card title={item.title ?? "No Title"}
-                                      description={item.description ?? undefined}
-                                      image={item.image ?? undefined}
-                                      buttons={[{
-                                          id: "play-songlist",
-                                          iconName: "media-playback-start-symbolic",
-                                          onClicked: () => Media.getDefault().playList(item, 0)
-                                      }]}
-                                    />
-                                })()}
-                            </Adw.Clamp>
-                        )}
+                                    })()}
+                                </Adw.Clamp>
+                            )}
+                        </Gtk.Box>
                     </Gtk.ScrolledWindow>
                 }
             </Gtk.Box> as Gtk.Box
