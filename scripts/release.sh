@@ -37,7 +37,7 @@ options:
 done
 
 # send literal variable name, so it's interpreted at runtime
-bash ./scripts/build.sh -o "${outdir:-./build/release}" -b -r "${gresource_file:-/usr/share/vibe/resources.gresource}"
+bash ./scripts/build.sh -o "${outdir:-./build/release}" -b -r "${gresource_file:-'/usr/share/vibe/resources.gresource'}"
 
 echo "[info] making desktop entry"
 entry=`cat ./resources/io.github.retrozinndev.vibe.desktop`

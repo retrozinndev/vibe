@@ -47,7 +47,7 @@ sass --no-source-map -I ./resources/styles resources/styles/style.scss build/res
 # -> GResource
 echo "[info] compiling gresource"
 gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
-    echo -n "${gresources_target:-$output/resources.gresource}"`
+    echo -n "${gresources_target:-"$output/resources.gresource"}"`
 [ ! "$keep_gresource" ] && mkdir -p `dirname "$gres_target"`
 glib-compile-resources resources.gresource.xml \
     --sourcedir . \
@@ -68,7 +68,7 @@ $esbuild --bundle ./src/app.ts \
     --external:"gettext" \
     --define:"DEVEL=`[[ $is_devel ]] && echo -n true || echo -n false`" \
     --define:"VIBE_VERSION='`cat package.json | jq -r .version`'" \
-    --define:"GRESOURCES_FILE='${gresources_target:-$output/resources.gresource}'" 
+    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" 
 
 # -> Compile
 echo "[info] creating executable"
