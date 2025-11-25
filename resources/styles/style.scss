@@ -43,6 +43,10 @@ smallcard {
   min-height: 18px;
   background: var(--card-bg-color);
 
+  & image.art {
+    margin-right: 6px;
+  }
+
   & .buttons {
     margin-left: 6px;
   }

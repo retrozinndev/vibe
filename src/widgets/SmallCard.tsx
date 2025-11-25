@@ -71,7 +71,9 @@ export default class SmallCard extends Adw.Bin {
             <Gtk.CenterBox>
                 <Gtk.Box $type="start">
                     {this.#image && 
-                        <Gtk.Image $={(self) => self.set_from_pixbuf(this.#image)} />
+                        <Gtk.Image pixelSize={24} class={"art"}
+                          $={(self) => self.set_from_pixbuf(this.#image)} 
+                        />
                     }
                     <Gtk.Label label={createBinding(this, "title")} xalign={0} 
                       ellipsize={Pango.EllipsizeMode.END}
