@@ -5,7 +5,7 @@ import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, For } from "gnim";
 import { getter, gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, isLabelButton, LabelButton } from "libvibe";
-import { createScopedConnection, omitObjectKeys } from "../modules/util";
+import { createScopedConnection, omitObjectKeys, toBoolean } from "../modules/util";
 import Pango from "gi://Pango?version=1.0";
 
 
@@ -69,33 +69,31 @@ export default class SmallCard extends Adw.Bin {
 
 
         this.set_child(
-            <Gtk.Box>
-                <Gtk.CenterBox hexpand>
-                    <Gtk.Box $type="start">
-                        {this.#image && 
-                            <Gtk.Image $={(self) => self.set_from_pixbuf(this.#image)} />
+            <Gtk.CenterBox>
+                <Gtk.Box $type="start">
+                    {this.#image && 
+                        <Gtk.Image $={(self) => self.set_from_pixbuf(this.#image)} />
+                    }
+                    <Gtk.Label label={createBinding(this, "title")} xalign={0} 
+                      ellipsize={Pango.EllipsizeMode.START}
+                    />
+                </Gtk.Box>
+                <Gtk.Box class={"linked buttons"} visible={toBoolean(createBinding(this, "buttons"))} $type="end">
+                    <For each={createBinding(this, "buttons")}>
+                        {(button: IconButton|LabelButton) => 
+                            <Gtk.Button label={isLabelButton(button) ?
+                                  button.label : undefined
+                              } iconName={isIconButton(button) ?
+                                  button.iconName : undefined
+                              } onClicked={() => {
+                                  this.emit("button-clicked", button);
+                                  button.onClicked?.();
+                              }}
+                            />
                         }
-                        <Gtk.Label label={createBinding(this, "title")} xalign={0} 
-                          ellipsize={Pango.EllipsizeMode.START}
-                        />
-                    </Gtk.Box>
-                    <Gtk.Box class={"linked"}>
-                        <For each={createBinding(this, "buttons")}>
-                            {(button: IconButton|LabelButton) => 
-                                <Gtk.Button label={isLabelButton(button) ?
-                                      button.label : undefined
-                                  } iconName={isIconButton(button) ?
-                                      button.iconName : undefined
-                                  } onClicked={() => {
-                                      this.emit("button-clicked", button);
-                                      button.onClicked?.();
-                                  }}
-                                />
-                            }
-                        </For>
-                    </Gtk.Box>
-                </Gtk.CenterBox>
-            </Gtk.Box> as Gtk.Box
+                    </For>
+                </Gtk.Box>
+            </Gtk.CenterBox> as Gtk.CenterBox
         );
     }
 
