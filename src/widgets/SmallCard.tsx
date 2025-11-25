@@ -57,7 +57,6 @@ export default class SmallCard extends Adw.Bin {
         if(props.buttons !== undefined)
             this.buttons.push(...props.buttons);
 
-        this.set_hexpand(false);
         this.add_controller(gestureClick);
 
         createScopedConnection(
@@ -75,7 +74,7 @@ export default class SmallCard extends Adw.Bin {
                         <Gtk.Image $={(self) => self.set_from_pixbuf(this.#image)} />
                     }
                     <Gtk.Label label={createBinding(this, "title")} xalign={0} 
-                      ellipsize={Pango.EllipsizeMode.START}
+                      ellipsize={Pango.EllipsizeMode.END}
                     />
                 </Gtk.Box>
                 <Gtk.Box class={"linked buttons"} visible={toBoolean(createBinding(this, "buttons"))} $type="end">
