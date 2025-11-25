@@ -6,6 +6,7 @@ import { getter, property, register } from "gnim/gobject";
 import { Plugin } from "libvibe/plugin";
 import { Vibe } from "libvibe";
 import { PluginLocal } from "./builtin/local";
+import { exportToGlobal } from "./exports";
 
 
 /** this is only for type's sake, so it works correctly when importing a plugin.
@@ -39,6 +40,8 @@ export default class PluginHandler extends GObject.Object {
 
         if(!Vibe.pluginsDir.query_exists(null))
             Vibe.pluginsDir.make_directory_with_parents(null);
+
+        exportToGlobal();
 
         this.#builtinPlugins.forEach(pl =>
             this.importBultin(pl).catch(e => 

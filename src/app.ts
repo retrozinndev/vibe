@@ -14,12 +14,6 @@ import { programArgs, programInvocationName } from "system";
 import { openMainWindow } from "./Window";
 
 
-const libvibe = {
-    vibe: await import("libvibe"),
-    objects: await import("libvibe/objects"),
-    plugin: await import("libvibe/plugin")
-};
-
 @register({ GTypeName: "VibeApp" })
 export class App extends Adw.Application {
     private static instance: App;
@@ -130,11 +124,6 @@ export class App extends Adw.Application {
 
         Gst.init(null);
         this.loadAssets();
-
-        // add application's libvibe module to globalThis, so plugins can access the same instance
-        Object.keys(libvibe).forEach(key => 
-            Object.assign(globalThis, libvibe[key as keyof typeof libvibe])
-        );
 
         // init libvibe
         Vibe.getDefault()
