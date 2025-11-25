@@ -50,6 +50,8 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
             cssName: "page"
         });
 
+        this.set_hexpand(true);
+
         if(props.modal !== PageModal.CUSTOM && !this.is_content_of_type(props.modal, props.content))
             throw new Error("Content of the specified type is now allowed in this modal");
 
@@ -100,7 +102,7 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
 
                         {props.sections && <For each={createBinding(this, "sections")}>
                             {(section: SectionType) => 
-                                <Section {...section} />
+                                <Section {...section} hexpand />
                             }
                         </For>}
                     </Gtk.Box>
@@ -139,7 +141,7 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
 
                         {props.sections && <For each={createBinding(this, "sections")}>
                             {(section: SectionType) => 
-                                <Section {...section} />
+                                <Section {...section} hexpand />
                             }
                         </For>}
                     </Gtk.Box>

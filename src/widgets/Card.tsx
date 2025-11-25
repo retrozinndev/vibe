@@ -64,6 +64,7 @@ export default class Card extends Adw.Bin {
         buttons?: Array<IconButton | LabelButton>;
     } & Partial<Adw.Bin.ConstructorProps>) {
         super({
+            cssName: "card",
             ...omitObjectKeys(props, [
                 "title",
                 "description",
@@ -74,7 +75,6 @@ export default class Card extends Adw.Bin {
 
         const gestureClick = Gtk.GestureClick.new();
         
-        this.add_css_class("card");
         this.add_controller(gestureClick);
         createScopedConnection(
             gestureClick, "released", () => {

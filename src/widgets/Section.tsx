@@ -18,7 +18,7 @@ import SmallCard from "./SmallCard";
 
 
 @register({ GTypeName: "VibeSection" })
-export default class Section extends Adw.Bin {
+export default class Section extends Gtk.Box {
     #content: Array<Song|SongList|Artist> = [];
     #type: NonNullable<VibeSection["type"]> = "row";
 
@@ -43,6 +43,7 @@ export default class Section extends Adw.Bin {
 
     constructor(props: VibeSection & Partial<Gtk.Box.ConstructorProps>) {
         super({
+            cssName: "section",
             ...omitObjectKeys(props, [
                 "content",
                 "title",
@@ -50,8 +51,7 @@ export default class Section extends Adw.Bin {
                 "type",
                 "endButton",
                 "headerButtons"
-            ]),
-            cssName: "section"
+            ])
         });
 
         this.title = props.title;
@@ -70,43 +70,86 @@ export default class Section extends Adw.Bin {
         if(props.headerButtons !== undefined)
             this.headerButtons = props.headerButtons;
 
+        this.set_orientation(Gtk.Orientation.VERTICAL);
+        this.append(
+            <Gtk.CenterBox orientation={Gtk.Orientation.HORIZONTAL}>
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} $type="start">
+                    <Gtk.Label class={"title title-1"} label={createBinding(this, "title")} 
+                      xalign={0} ellipsize={Pango.EllipsizeMode.END}
+                    />
 
-        this.set_child(
-            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                <Gtk.CenterBox orientation={Gtk.Orientation.HORIZONTAL}>
-                    <Gtk.Box orientation={Gtk.Orientation.VERTICAL} $type="start">
-                        <Gtk.Label class={"title title-1"} label={createBinding(this, "title")} 
-                          xalign={0} ellipsize={Pango.EllipsizeMode.END}
+                    <Gtk.Label class={"description body dimmed"} visible={toBoolean(createBinding(this, "description"))}
+                      label={createBinding(this, "description").as(s => s ?? "")}
+                      xalign={0}
+                    />
+                </Gtk.Box>
+
+                <Gtk.Box class={"linked"} visible={toBoolean(createBinding(this, "headerButtons"))}
+                  $type="end">
+
+                    <For each={createBinding(this, "headerButtons")}>
+                        {(button: IconButton|LabelButton) => 
+                            <Gtk.Button label={isLabelButton(button) && button.label !== undefined ? 
+                                  button.label : undefined
+                              } onClicked={() => button.onClicked?.()}
+                              iconName={isIconButton(button) && button.iconName !== undefined ?
+                                  button.iconName : undefined
+                              }
+                            />
+                        }
+                    </For>
+                </Gtk.Box>
+            </Gtk.CenterBox> as Gtk.CenterBox
+        );
+
+        this.append(
+            this.#type === "listrow" ?
+                <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} minChildrenPerLine={2}>
+                    {this.#content.map(item => {
+                        if(item instanceof Song)
+                            return <SmallCard title={item.name ?? "Unnamed"}
+                              image={item.image ?? undefined}
+                              buttons={[{
+                                  id: "play-song",
+                                  iconName: "media-playback-start-symbolic",
+                                  onClicked: () => Media.getDefault().playSong(item, 0)
+                              }]}
+                            />
+
+                        if(item instanceof Artist)
+                            return <SmallCard title={item.name ?? "Unknown Artist"}
+                              image={item.image ?? undefined}
+                              buttons={[{
+                                  id: "play-song",
+                                  iconName: "media-playback-start-symbolic",
+                                  onClicked: () => { /* TODO: redirect to artist page */ }
+                              }]}
+                            />
+
+                        return <SmallCard title={item.title ?? "No Title"} 
+                          // TODO: wait for internet provider's DNS to get back :broken_heart:, 
+                          // so I can add an image to the SongList(I already committed the feature,
+                          // but i can't push it because of the CLARO BR DNS blocking almost everything)
+                          buttons={[{
+                              id: "play-songlist",
+                              iconName: "media-playback-start-symbolic",
+                              onClicked: () => Media.getDefault().playList(item, 0)
+                          }]}
                         />
+                    })}
+                </Gtk.FlowBox> as Gtk.FlowBox
+            : <Gtk.ScrolledWindow vscrollbarPolicy={Gtk.PolicyType.NEVER} 
+              hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} hexpand>
+                <Gtk.Box orientation={Gtk.Orientation.HORIZONTAL} halign={Gtk.Align.START}
+                  spacing={10}>
 
-                        <Gtk.Label class={"description body dimmed"} visible={toBoolean(createBinding(this, "description"))}
-                          label={createBinding(this, "description").as(s => s ?? "")}
-                          xalign={0}
-                        />
-                    </Gtk.Box>
-
-                    <Gtk.Box class={"linked"} visible={toBoolean(createBinding(this, "headerButtons"))}
-                      $type="end">
-
-                        <For each={createBinding(this, "headerButtons")}>
-                            {(button: IconButton|LabelButton) => 
-                                <Gtk.Button label={isLabelButton(button) && button.label !== undefined ? 
-                                      button.label : undefined
-                                  } onClicked={() => button.onClicked?.()}
-                                  iconName={isIconButton(button) && button.iconName !== undefined ?
-                                      button.iconName : undefined
-                                  }
-                                />
-                            }
-                        </For>
-                    </Gtk.Box>
-                </Gtk.CenterBox>
-                {
-                    this.#type === "listrow" ?
-                        <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} minChildrenPerLine={1}>
-                            {this.#content.map(item => {
+                    {this.#content.map(item => 
+                        <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
+                          maximumSize={180} halign={Gtk.Align.START}>
+                            {(() => {
                                 if(item instanceof Song)
-                                    return <SmallCard title={item.name ?? "Unnamed"}
+                                    return <Card title={item.name ?? "Unnamed"}
+                                      description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
                                       image={item.image ?? undefined}
                                       buttons={[{
                                           id: "play-song",
@@ -116,7 +159,7 @@ export default class Section extends Adw.Bin {
                                     />
 
                                 if(item instanceof Artist)
-                                    return <SmallCard title={item.name ?? "Unknown Artist"}
+                                    return <Card title={item.name ?? "Unknown Artist"}
                                       image={item.image ?? undefined}
                                       buttons={[{
                                           id: "play-song",
@@ -125,64 +168,20 @@ export default class Section extends Adw.Bin {
                                       }]}
                                     />
 
-                                return <SmallCard title={item.title ?? "No Title"} 
-                                  // TODO: wait for internet provider's DNS to get back :broken_heart:, 
-                                  // so I can add an image to the SongList(I already committed the feature,
-                                  // but i can't push it because of the CLARO BR DNS blocking almost everything)
+                                return <Card title={item.title ?? "No Title"}
+                                  description={item.description ?? undefined}
+                                  image={item.image ?? undefined}
                                   buttons={[{
                                       id: "play-songlist",
                                       iconName: "media-playback-start-symbolic",
                                       onClicked: () => Media.getDefault().playList(item, 0)
                                   }]}
                                 />
-                            })}
-                        </Gtk.FlowBox>
-                    : <Gtk.ScrolledWindow vscrollbarPolicy={Gtk.PolicyType.NEVER} 
-                      hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} hexpand>
-                        <Gtk.Box orientation={Gtk.Orientation.HORIZONTAL} halign={Gtk.Align.START}
-                          spacing={10}>
-
-                            {this.#content.map(item => 
-                                <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
-                                  maximumSize={180} halign={Gtk.Align.START}>
-                                    {(() => {
-                                        if(item instanceof Song)
-                                            return <Card title={item.name ?? "Unnamed"}
-                                              description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
-                                              image={item.image ?? undefined}
-                                              buttons={[{
-                                                  id: "play-song",
-                                                  iconName: "media-playback-start-symbolic",
-                                                  onClicked: () => Media.getDefault().playSong(item, 0)
-                                              }]}
-                                            />
-
-                                        if(item instanceof Artist)
-                                            return <Card title={item.name ?? "Unknown Artist"}
-                                              image={item.image ?? undefined}
-                                              buttons={[{
-                                                  id: "play-song",
-                                                  iconName: "media-playback-start-symbolic",
-                                                  onClicked: () => { /* TODO: redirect to artist page */ }
-                                              }]}
-                                            />
-
-                                        return <Card title={item.title ?? "No Title"}
-                                          description={item.description ?? undefined}
-                                          image={item.image ?? undefined}
-                                          buttons={[{
-                                              id: "play-songlist",
-                                              iconName: "media-playback-start-symbolic",
-                                              onClicked: () => Media.getDefault().playList(item, 0)
-                                          }]}
-                                        />
-                                    })()}
-                                </Adw.Clamp>
-                            )}
-                        </Gtk.Box>
-                    </Gtk.ScrolledWindow>
-                }
-            </Gtk.Box> as Gtk.Box
+                            })()}
+                        </Adw.Clamp>
+                    )}
+                </Gtk.Box>
+            </Gtk.ScrolledWindow> as Gtk.ScrolledWindow
         );
     }
 }

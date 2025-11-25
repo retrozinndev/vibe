@@ -6,6 +6,7 @@ import { createBinding, For } from "gnim";
 import { getter, gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, isLabelButton, LabelButton } from "libvibe";
 import { createScopedConnection, omitObjectKeys } from "../modules/util";
+import Pango from "gi://Pango?version=1.0";
 
 
 @register({ GTypeName: "VibeSmallCard" })
@@ -38,11 +39,14 @@ export default class SmallCard extends Adw.Bin {
         image?: GdkPixbuf.Pixbuf;
         buttons?: Array<IconButton|LabelButton>;
     } & Partial<Adw.Bin.ConstructorProps>) {
-        super(omitObjectKeys(props, [
-            "title",
-            "image",
-            "buttons"
-        ]));
+        super({
+            cssName: "smallcard",
+            ...omitObjectKeys(props, [
+                "title",
+                "image",
+                "buttons"
+            ])
+        });
 
         const gestureClick = Gtk.GestureClick.new();
 
@@ -53,7 +57,6 @@ export default class SmallCard extends Adw.Bin {
         if(props.buttons !== undefined)
             this.buttons.push(...props.buttons);
 
-        this.add_css_class("opaque");
         this.set_hexpand(false);
         this.add_controller(gestureClick);
 
@@ -73,7 +76,7 @@ export default class SmallCard extends Adw.Bin {
                             <Gtk.Image $={(self) => self.set_from_pixbuf(this.#image)} />
                         }
                         <Gtk.Label label={createBinding(this, "title")} xalign={0} 
-                          yalign={.5}
+                          ellipsize={Pango.EllipsizeMode.START}
                         />
                     </Gtk.Box>
                     <Gtk.Box class={"linked"}>
