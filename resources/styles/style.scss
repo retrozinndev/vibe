@@ -1,5 +1,5 @@
 window .container {
-  background: #{"@theme_bg_color"};
+  background: var(--window-bg-color);
 }
 
 flowboxchild:hover,
@@ -30,9 +30,22 @@ listboxchild:focus-visible {
   margin: 12px 0;
 }
 
-.card {
+card {
   padding: 12px;
   border-radius: 20px;
+  min-width: 110px;
+  background: var(--card-bg-color);
+}
+
+smallcard {
+  padding: 10px;
+  border-radius: 12px;
+  min-height: 18px;
+  background: var(--card-bg-color);
+
+  & .buttons {
+    margin-left: 6px;
+  }
 }
 
 page {
