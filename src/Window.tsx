@@ -71,26 +71,13 @@ export const openMainWindow = () => createRoot((dispose) => {
                             <PluginSelector $type="end" />
                         </Adw.HeaderBar>
 
-                        {tabs.map((tab, i, arr) => 
+                        {tabs.map(tab => 
                             <NavigationTabButton iconName={createBinding(tab, "iconName")}
                               actionClicked={() => {
                                   // all tab pages are already added, so we can do that
-                                  let currentPageIndex: number;
-                                  
-                                  for(let i = 0; i < arr.length; i++) {
-                                      const tab = arr[i];
-
-                                      if(pages.currentPage.id === tab.id) {
-                                          currentPageIndex = i;
-                                          break;
-                                      }
-                                  }
-                                  
                                   pages.set_visible_child_full(
                                       tab.id,
-                                      i > currentPageIndex! ?
-                                          Gtk.StackTransitionType.SLIDE_UP
-                                      : Gtk.StackTransitionType.SLIDE_DOWN
+                                      Gtk.StackTransitionType.OVER_UP_DOWN
                                   );
                               }} 
                               visible={createBinding(tab, "visible")}
