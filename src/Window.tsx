@@ -11,9 +11,10 @@ import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
 import Tab from "./widgets/Tab";
 import PluginSelector from "./widgets/PluginSelector";
-import { Page, Page as PageWidget } from "./widgets/Page";
-import { PageModal } from "libvibe/interfaces";
+import { Page as PageWidget } from "./widgets/Page";
+import { Page, PageModal, PageProps } from "libvibe/interfaces";
 import { Pages } from "./pages";
+import { Vibe } from "libvibe";
 
 
 let pages: Pages;
@@ -37,6 +38,11 @@ export const openMainWindow = () => createRoot((dispose) => {
           );
       }}
     /> as Pages;
+
+    Vibe.getDefault().setPages(
+        pages, 
+        PageWidget as never // ts(typescript) ahh
+    );
 
     return <Adw.ApplicationWindow title={"Vibe"} hideOnClose={false} 
       visible onCloseRequest={() => dispose()} application={App.get_default()}

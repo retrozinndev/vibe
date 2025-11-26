@@ -1,7 +1,7 @@
 import Gtk from "gi://Gtk?version=4.0";
 import GObject, { getter, gtype, register, signal } from "gnim/gobject";
 import { Page, PagesSignalSignatures, Pages as VibePages } from "libvibe/interfaces";
-import { createScopedConnection, omitObjectKeys } from "../modules/util";
+import { omitObjectKeys } from "../modules/util";
 
 
 @register({ GTypeName: "VibePagesWidget" })
@@ -18,10 +18,24 @@ export class Pages extends Gtk.Stack implements VibePages {
     get history() { return this.#history; }
 
     @signal(gtype<Page>(GObject.Object))
-    added(_: Page) {}
+    added(page: Page) {
+        const name = String(page.id);
+
+        this.add_named(page, name);
+        this.set_visible_child_full(name, Gtk.StackTransitionType.SLIDE_LEFT);
+    }
 
     @signal(gtype<Page>(GObject.Object))
-    removed(_: Page) {}
+    removed(rmPage: Page) {
+        const name = String(rmPage.id);
+
+        this.set_visible_child_name(
+            String(this.#history[this.#history.length - 1].id));
+
+        setTimeout(() => {
+            this.remove(this.get_child_by_name(name)!)
+        }, this.transitionDuration);
+    }
 
 
     constructor(props: {
@@ -30,37 +44,6 @@ export class Pages extends Gtk.Stack implements VibePages {
         super(omitObjectKeys(props, [ "initialPage" ]));
 
         this.#page = props.initialPage;
-
-        createScopedConnection<typeof this, "notify::visible-child">(
-            this, "notify::visible-child", () => {
-                const visibleChild = this.get_visible_child();
-
-                this.#page = visibleChild as Page;
-                this.notify("current-page");
-            }
-        );
-        
-        createScopedConnection<typeof this, "added">(
-            this, "added", (page) => {
-                const name = String(page.id);
-
-                this.add_named(page, name);
-                this.set_visible_child_name(name);
-            }
-        );
-
-        createScopedConnection<typeof this, "removed">(
-            this, "removed", (rmPage) => {
-                const name = String(rmPage.id);
-
-                this.set_visible_child_name(
-                    String(this.#history[this.#history.length - 1].id));
-
-                setTimeout(() => {
-                    this.remove(this.get_child_by_name(name)!)
-                }, this.transitionDuration);
-            }
-        );
     }
 
     public addPage(page: Page): void {
@@ -68,7 +51,9 @@ export class Pages extends Gtk.Stack implements VibePages {
             const p = this.#history[i];
 
             if(p.id === page.id && i < this.#history.length) {
-                this.#history.splice(i+1, this.#history.length - i);
+                this.#history.splice(i+1, this.#history.length - i).forEach(p =>
+                    this.emit("removed", p)
+                );
                 this.notify("history");
                 this.#page = page;
                 this.notify("current-page");
@@ -80,6 +65,7 @@ export class Pages extends Gtk.Stack implements VibePages {
         this.notify("history");
         this.#page = page;
         this.notify("current-page");
+        this.emit("added", page);
     }
 
     back(numOfPages?: number): void {
@@ -93,6 +79,8 @@ export class Pages extends Gtk.Stack implements VibePages {
 
         this.#page = this.#history[targetIndex];
         this.notify("current-page");
-        this.#history.splice(targetIndex, this.#history.length - targetIndex);
+        this.#history.splice(targetIndex, this.#history.length - targetIndex).forEach(p =>
+            this.emit("removed", p)
+        );
     }
 }
