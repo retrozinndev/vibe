@@ -55,23 +55,33 @@ smallcard {
 page {
   padding: 16px;
   padding-bottom: 0;
-}
 
-page .page-search {
-  & .search-entry {
-    $height: 48px;
+  & .page-search {
+    & .search-entry {
+      $height: 48px;
 
-    min-height: $height;
-    border-radius: calc($height / 2);
-    margin-bottom: 6px;
-    padding: {
-      left: calc($height / 3);
-      right: calc($height / 3);
-    };
+      min-height: $height;
+      border-radius: calc($height / 2);
+      margin-bottom: 6px;
+      padding: {
+        left: calc($height / 3);
+        right: calc($height / 3);
+      };
+    }
+
+    & .results {
+      padding: 10px 0;
+    }
   }
 
-  & .results {
-    padding: 10px 0;
+  & .artist-page {
+    & .header {
+      margin-bottom: 6px;
+      
+      & .data {
+        margin-left: 6px;
+      }
+    }
   }
 }
 
@@ -81,4 +91,8 @@ section {
   & .description {
     margin-bottom: 6px;
   }
+}
+
+popup .container {
+  padding: 12px;
 }

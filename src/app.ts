@@ -21,6 +21,7 @@ export class App extends Adw.Application {
     #gresource: Gio.Resource|null = null;
     #license!: string;
     #cssProvider: Gtk.CssProvider|null = null;
+    #mainWindow!: Adw.ApplicationWindow;
     #encoder!: TextEncoder;
     #decoder!: TextDecoder;
     #scope!: Scope;
@@ -133,7 +134,7 @@ export class App extends Adw.Application {
         PluginHandler.getDefault();
         Vibe.getDefault().emit("initialized");
 
-        openMainWindow();
+        this.#mainWindow = openMainWindow();
         PluginHandler.getDefault().notify("plugin");
     });
 
@@ -161,6 +162,10 @@ export class App extends Adw.Application {
                 null
             ).toArray()
         );
+    }
+
+    public get_main_window(): Adw.ApplicationWindow {
+        return this.#mainWindow;
     }
 
     public getScope(): Scope {

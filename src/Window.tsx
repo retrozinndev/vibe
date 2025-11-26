@@ -12,7 +12,7 @@ import OmniPlayer from "./widgets/OmniPlayer";
 import Tab from "./widgets/Tab";
 import PluginSelector from "./widgets/PluginSelector";
 import { Page as PageWidget } from "./widgets/Page";
-import { Page, PageModal, PageProps } from "libvibe/interfaces";
+import { PageModal } from "libvibe/interfaces";
 import { Pages } from "./pages";
 import { Vibe } from "libvibe";
 
@@ -119,5 +119,5 @@ export const openMainWindow = () => createRoot((dispose) => {
             <Gtk.Separator />
             <OmniPlayer />
         </Gtk.Box>
-    </Adw.ApplicationWindow>;
+    </Adw.ApplicationWindow> as Adw.ApplicationWindow;
 });

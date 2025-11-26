@@ -75,13 +75,13 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
                   spacing={16}>
 
                     <Gtk.Box class="header" orientation={Gtk.Orientation.HORIZONTAL} hexpand>
-                        <Gtk.Picture canShrink={false} contentFit={Gtk.ContentFit.COVER} 
-                          hexpand={false} visible={Boolean((this.#content as Artist).image)} 
-                          $={(self) => self.set_pixbuf(
+                        <Gtk.Image hexpand={false} visible={Boolean((this.#content as Artist).image)} 
+                          pixelSize={128}
+                          $={(self) => self.set_from_pixbuf(
                               (this.#content as Artist).image
                           )}
                         />
-                        <Gtk.Box class="data" orientation={Gtk.Orientation.VERTICAL}>
+                        <Gtk.Box class="data" orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER}>
                             <Gtk.Label xalign={0} label={(this.#content as Artist).displayName ??
                                   (this.#content as Artist).name ?? "Unnamed Artist"
                               } class={"title-1"} ellipsize={Pango.EllipsizeMode.END}
@@ -91,9 +91,6 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
                                   (this.#content as Artist).displayName === (this.#content as Artist).name
                               )}
                               ellipsize={Pango.EllipsizeMode.END} class={"heading dimmed"}
-                            />
-                            <Gtk.Label class={"body dimmed"} ellipsize={Pango.EllipsizeMode.END}
-                              maxWidthChars={300}
                             />
                         </Gtk.Box>
                     </Gtk.Box>
@@ -235,5 +232,23 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
             || (modal === PageModal.ARTIST && content instanceof Artist)
             || (modal === PageModal.PLAYLIST && content instanceof Playlist)
             || false;
+    }
+
+    private modal_to_string<M extends PageModal>(modal: M): string {
+        switch(modal) {
+            case PageModal.SONG:
+                return "song";
+
+            case PageModal.ALBUM:
+                return "album";
+
+            case PageModal.ARTIST:
+                return "artist";
+
+            case PageModal.PLAYLIST:
+                return "playlist";
+        }
+
+        return "custom";
     }
 }
