@@ -122,8 +122,6 @@ export class App extends Adw.Application {
 
     readonly main = (): void => createRoot(() => {
         this.#scope = getScope();
-
-        Gst.init(null);
         this.loadAssets();
 
         // init libvibe

@@ -77,7 +77,7 @@ export const openMainWindow = () => createRoot((dispose) => {
                                   // all tab pages are already added, so we can do that
                                   pages.set_visible_child_full(
                                       tab.id,
-                                      Gtk.StackTransitionType.OVER_UP_DOWN
+                                      Gtk.StackTransitionType.SLIDE_UP_DOWN
                                   );
                               }} 
                               visible={createBinding(tab, "visible")}

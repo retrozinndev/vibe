@@ -6,6 +6,7 @@ import { Song } from "libvibe/objects";
 import { createScopedConnection, omitObjectKeys } from "../modules/util";
 import SongPopover from "./SongPopover";
 import Gdk from "gi://Gdk?version=4.0";
+import { Vibe } from "libvibe";
 
 
 // TODO
@@ -72,7 +73,7 @@ export default class extends Adw.Bin {
                 <Gtk.CenterBox orientation={Gtk.Orientation.HORIZONTAL}>
                     <Gtk.Box spacing={8} $type="start">
                         <Gtk.Button class={"play"} onClicked={() => {
-                            // TODO play song here
+                            Vibe.getDefault().media.playSong(this.#song, 0);
                         }} iconName={"media-playback-start-symbolic"} />
 
                         {image && 

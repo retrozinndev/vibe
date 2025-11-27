@@ -3,11 +3,12 @@ import Media from "../modules/media";
 import AlbumArt from "./AlbumArt";
 import { createBinding, With } from "gnim";
 import { Song } from "libvibe/objects";
+import { PlaybackStatus } from "libvibe/interfaces";
 
 
 export default () =>
-    <Gtk.Box class={"bg-secondary omniplayer"} hexpand vexpand={false}
-      valign={Gtk.Align.END} heightRequest={64}>
+    <Gtk.Box class={"bg-secondary omniplayer"} hexpand vexpand={false} valign={Gtk.Align.END} 
+      heightRequest={64}>
 
         <Gtk.CenterBox hexpand vexpand={false} valign={Gtk.Align.CENTER}>
             <Gtk.Box class={"song"} $type="start" hexpand>
@@ -36,12 +37,32 @@ export default () =>
 
                 <Gtk.Button class={"previous flat"} vexpand={false}
                   iconName={"media-skip-backward-symbolic"} 
+                  onClicked={() => Media.getDefault().previous()}
                 />
                 <Gtk.Button class={"pause pill"}
-                  iconName={"media-playback-pause-symbolic"}
+                  iconName={createBinding(Media.getDefault(), "status").as(status =>
+                      status === PlaybackStatus.PAUSED ?
+                          "media-playback-start-symbolic"
+                      : "media-playback-pause-symbolic"
+                  )} onClicked={() => {
+                      const status = Media.getDefault().status;
+
+                      if(status === PlaybackStatus.PLAYING) {
+                          Media.getDefault().pause();
+                          return;
+                      }
+
+                      if(status === PlaybackStatus.PAUSED) {
+                          Media.getDefault().resume();
+                          return;
+                      }
+
+                      // nothing...
+                  }}
                 />
                 <Gtk.Button class={"next flat"} vexpand={false}
                   iconName={"media-skip-forward-symbolic"} 
+                  onClicked={() => Media.getDefault().next()}
                 />
             </Gtk.Box>
             <Gtk.Box $type="end" />

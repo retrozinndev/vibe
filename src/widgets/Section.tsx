@@ -8,6 +8,7 @@ import {
     isIconButton,
     isLabelButton,
     LabelButton,
+    Vibe,
     Section as VibeSection
 } from "libvibe";
 import { Artist, Song, SongList } from "libvibe/objects";
@@ -15,6 +16,7 @@ import Media from "../modules/media";
 import { omitObjectKeys, toBoolean } from "../modules/util";
 import Card from "./Card";
 import SmallCard from "./SmallCard";
+import { PageModal } from "libvibe/interfaces";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -164,7 +166,20 @@ export default class Section extends Gtk.Box {
                                       buttons={[{
                                           id: "play-song",
                                           iconName: "media-playback-start-symbolic",
-                                          onClicked: () => { /* TODO: redirect to artist page */ }
+                                          onClicked: () => {
+                                              if(!item.name)
+                                                  return;
+
+                                              Vibe.getDefault().addPage({
+                                                  modal: PageModal.ARTIST,
+                                                  content: item,
+                                                  title: item.name,
+                                                  sections: [{
+                                                      title: "Top"
+                                                      // TODO add song 
+                                                  }]
+                                              });
+                                          }
                                       }]}
                                     />
 
