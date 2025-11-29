@@ -3,7 +3,7 @@ set -e
 output="./build"
 esbuild="esbuild"
 
-while getopts r:o:e:c:bdh args; do
+while getopts r:o:e:c:m:bdh args; do
     case "$args" in
         r) 
             gresources_target=${OPTARG}
@@ -20,6 +20,9 @@ while getopts r:o:e:c:bdh args; do
         d)
             is_devel=true
             ;;
+        m)
+            write_meta=true
+            ;;
         h)
             echo "\
 Vibe's build script. 
@@ -30,6 +33,7 @@ Options:
   -o \$path: specify the build's output directory (default: \`./build\`)
   -e \$exec: specify where's the esbuild binary (default: \`esbuild\`)
   -b: only target gresource in the build, keeping the file in the output dir
+  -m: also write dependency metadata json to output
   -d: enable developer mode in the build
   -h: show this help message"
             exit 0
@@ -68,7 +72,8 @@ $esbuild --bundle ./src/app.ts \
     --external:"gettext" \
     --define:"DEVEL=`[[ $is_devel ]] && echo -n true || echo -n false`" \
     --define:"VIBE_VERSION='`cat package.json | jq -r .version`'" \
-    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" 
+    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" \
+    `[[ $write_meta ]] && echo -n "--metafile=$output/meta.json"` 
 
 # -> Compile
 echo "[info] creating executable"
