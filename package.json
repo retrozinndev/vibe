@@ -32,8 +32,10 @@
     "clean": "bash scripts/clean.sh"
   },
   "devDependencies": {
+    "esbuild": "^0.27.0",
     "gnim": "^1.9.0",
     "gnim-utils": "github:retrozinndev/gnim-utils",
-    "libvibe": "github:retrozinndev/libvibe"
+    "libvibe": "github:retrozinndev/libvibe",
+    "sass": "^1.94.2"
   }
 }
