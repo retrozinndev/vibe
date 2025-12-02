@@ -44,19 +44,6 @@ done
 bash ./scripts/clean.sh
 mkdir -p $output
 
-# -> Sass (stylesheet)
-echo "[info] compiling sass in \`./build/resources/style.css\`"
-sass --no-source-map -I ./resources/styles resources/styles/style.scss build/resources/style.css
-
-# -> GResource
-echo "[info] compiling gresource"
-gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
-    echo -n "${gresources_target:-"$output/resources.gresource"}"`
-[ ! "$keep_gresource" ] && mkdir -p `dirname "$gres_target"`
-glib-compile-resources resources.gresource.xml \
-    --sourcedir . \
-    --target "$gres_target"
-
 # -> Bundle
 echo "[info] bundling project"
 $esbuild --bundle ./src/app.ts \
@@ -74,6 +61,19 @@ $esbuild --bundle ./src/app.ts \
     --define:"VIBE_VERSION='`cat package.json | jq -r .version`'" \
     --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" \
     `[[ $write_meta ]] && echo -n "--metafile=$output/meta.json"` 
+
+# -> Sass (stylesheet)
+echo "[info] compiling sass in \`./build/resources/style.css\`"
+sass --no-source-map -I ./resources/styles resources/styles/style.scss build/resources/style.css
+
+# -> GResource
+echo "[info] compiling gresource"
+gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
+    echo -n "${gresources_target:-"$output/resources.gresource"}"`
+[ ! "$keep_gresource" ] && mkdir -p `dirname "$gres_target"`
+glib-compile-resources resources.gresource.xml \
+    --sourcedir . \
+    --target "$gres_target"
 
 # -> Compile
 echo "[info] creating executable"
