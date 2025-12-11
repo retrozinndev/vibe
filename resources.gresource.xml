@@ -1,20 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <gresources>
-    <gresource prefix="/io/github/retrozinndev/vibe/styles">
-        <file alias="main.css">build/resources/style.css</file>
-    </gresource>
     <gresource prefix="/io/github/retrozinndev/vibe/icons">
         <file alias="library-symbolic.svg">resources/icons/library-symbolic.svg</file>
         <file alias="test-pass-symbolic.svg">resources/icons/test-pass-symbolic.svg</file>
+        <file alias="person-symbolic.svg">resources/icons/person-symbolic.svg</file>
+        <file alias="people-symbolic.svg">resources/icons/people-symbolic.svg</file>
         <file alias="plus-circle-outline-symbolic.svg">resources/icons/plus-circle-outline-symbolic.svg</file>
-        <file alias="io.github.retrozinndev.vibe-symbolic.svg">resources/icons/folder-music-symbolic.svg</file>
+        <file alias="folder-music-symbolic.svg">resources/icons/folder-music-symbolic.svg</file>
     </gresource>
     <gresource prefix="/io/github/retrozinndev/vibe/data">
         <file alias="license">LICENSE</file>
-    </gresource>
-    <gresource prefix="/io/github/retrozinndev/vibe/examples">
-        <file alias="rainy_boots.jpg">resources/examples/rainy_boots.jpg</file>
-        <file alias="lagtrain.jpg">resources/examples/lagtrain.jpg</file>
+        <file alias="mpris-interface.xml">resources/mpris-interface.xml</file>
+        <file alias="style.css">build/resources/style.css</file>
     </gresource>
 </gresources>

@@ -22,13 +22,20 @@ listboxchild:focus-visible {
   };
 }
 
-.omniplayer .album-art {
-  border-radius: 16px;
+.omniplayer {
+  padding: 4px;
+
+  & picture.album-image {
+    margin-right: 4px;
+    border-radius: 8px;
+  }
+
+  & .controls button {
+    margin: 12px 0;
+  }
 }
 
-.omniplayer .controls button {
-  margin: 12px 0;
-}
+.omniplayer 
 
 card {
   padding: 12px;
