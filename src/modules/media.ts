@@ -86,6 +86,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(this.play(song, pos, Gst.State.PLAYING)) {
             this.#queue.clear();
             this.#queue.add(song);
+            this.#queue.currentSong = 0;
             return;
         }
 
@@ -110,6 +111,7 @@ export default class Media extends GObject.Object implements VibeMedia {
             return;
         }
 
+        this.#queue.currentSong = posNum;
         this.play(this.#queue.songs[posNum]);
     }
 
