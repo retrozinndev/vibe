@@ -1,5 +1,3 @@
-export * from "gnim-utils";
-
 export function omitObjectKeys<Obj extends object = object>(obj: Obj, keys: Array<keyof Obj>|keyof Obj): object {
 
     const final = { ...obj } as Obj;
