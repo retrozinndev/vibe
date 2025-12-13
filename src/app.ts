@@ -3,15 +3,15 @@ import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
 import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio?version=2.0";
-import Gst from "gi://Gst?version=1.0";
 import Gtk from "gi://Gtk?version=4.0";
-import { Vibe } from "libvibe";
-import PluginHandler from "./plugins/plugin-handler";
-import Media from "./modules/media";
 import { createRoot, getScope, Scope } from "gnim";
 import { register } from "gnim/gobject";
+import PluginHandler from "./plugins/plugin-handler";
+import { Vibe } from "libvibe";
 import { programArgs, programInvocationName } from "system";
-import { openMainWindow } from "./Window";
+import { getPages, getToastOverlay, createMainWindow, start } from "./Window";
+import Media from "./modules/media";
+import { Page } from "./widgets/Page";
 
 
 @register({ GTypeName: "VibeApp" })
@@ -30,7 +30,7 @@ export class App extends Adw.Application {
 
     vfunc_activate(): void {
         super.vfunc_activate();
-        this.main();
+        createRoot(() => this.main());
     }
 
     vfunc_shutdown(): void {
@@ -120,21 +120,28 @@ export class App extends Adw.Application {
         return App.instance;
     }
 
-    readonly main = (): void => createRoot(() => {
+    private main(): void {
         this.#scope = getScope();
         this.loadAssets();
 
+        const vibe = new Vibe();
+        this.#mainWindow = createMainWindow(this);
+        start(this.#mainWindow);
+
         // init libvibe
-        Vibe.getDefault()
-            .setMedia(Media.getDefault());
+        vibe.setData(
+            Media.getDefault(),
+            getPages(),
+            Page as never, // typescript ahh
+            getToastOverlay()
+        );
 
         // init plugins
         PluginHandler.getDefault();
         Vibe.getDefault().emit("initialized");
 
-        this.#mainWindow = openMainWindow();
         PluginHandler.getDefault().notify("plugin");
-    });
+    }
 
     private loadAssets(): void {
         // add custom icons
@@ -144,11 +151,11 @@ export class App extends Adw.Application {
 
         // load stylesheets
         Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/vibe/styles", null
+            "/io/github/retrozinndev/vibe/data", null
         ).forEach(name => 
-            this.addStyle(
+            /\.css$/.test(name) && this.addStyle(
                 this.getDecoder().decode(Gio.resources_lookup_data(
-                    `/io/github/retrozinndev/vibe/styles/${name}`,
+                    `/io/github/retrozinndev/vibe/data/${name}`,
                     null
                 ).toArray())
             )
