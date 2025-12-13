@@ -1,10 +1,8 @@
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
-import { Section, Vibe } from "libvibe";
-import { PageModal } from "libvibe/interfaces";
-import { SongList, Song, Artist } from "libvibe/objects";
+import { Section } from "libvibe";
+import { SongList, Song, Artist, Meta } from "libvibe/objects";
 import { Plugin } from "libvibe/plugin";
 
 
@@ -13,12 +11,14 @@ export class PluginLocal extends Plugin {
     supportedFormats: Array<string> = [
         "m4a",
         "flac",
+        "mkv",
         "ogg",
         "weba",
         "mp3", // add more if needed (this is only for format checking)
     ];
 
     #library: Array<Song|SongList|Artist> = [];
+    #musicDir: Gio.File;
 
     constructor() {
         super({
@@ -37,72 +37,86 @@ export class PluginLocal extends Plugin {
         const userMusicDir = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_MUSIC) ??
             `${GLib.get_home_dir()}/Music`;
 
-        const musicDir = Gio.File.new_for_path(`${userMusicDir}/Vibe/Local`);
+        this.#musicDir = Gio.File.new_for_path(`${userMusicDir}/Vibe/Local`);
 
-        if(!musicDir.query_exists(null))
-            musicDir.make_directory_with_parents(null);
+        if(!this.#musicDir.query_exists(null))
+            this.#musicDir.make_directory_with_parents(null);
 
         try {
-            const items = musicDir.enumerate_children(
+            this.addToLibrary(this.#musicDir);
+        } catch(_) {}
+    }
+
+    /** recursively-add songs to library from a directory */
+    private addToLibrary(dir: Gio.File): void {
+        try {
+            const items = dir.enumerate_children(
                 "standard::*", 
                 Gio.FileQueryInfoFlags.NONE,
                 null
             );
-
             
             for(const item of items) {
+                if(item.get_file_type() === Gio.FileType.DIRECTORY) {
+                    this.addToLibrary(Gio.File.new_for_path(`${dir.peek_path()!}/${item.get_name()}`));
+                    continue;
+                }
+
                 if(!new RegExp(`\\.(${this.supportedFormats.join('|')})`).test(item.get_name()))
                    continue;
 
-                this.#library.push(new Song({
-                    image: GdkPixbuf.Pixbuf.new_from_resource("/io/github/retrozinndev/vibe/examples/lagtrain.jpg"),
-                    file: `${musicDir.peek_path()!}/${item.get_name()}`,
-                    name: item.get_name(),
+                const song = new Song({
+                    source: `${dir.peek_path()!}/${item.get_name()}`,
                     plugin: this
-                }));
-            }
-        } catch(_) {}
-    }
+                });
 
-    getRecommendations(length?: number, offset?: number): Promise<Array<Section> | null> | Array<Section> | null {
-        return [{
-            title: "Your songs",
-            description: "Songs that have been found in the music directory",
-            type: "row",
-            headerButtons: [{
-                label: "bleh!",
-                onClicked: () => {
-                    print("haha!");
+                try {
+                    const tags = Meta.getMetaTags(song.source as Gio.File);
+                    Meta.applyTags(song, tags, this, {
+                        applyImageAsynchronously: false
+                    });
+                } catch(e) {
+                    console.log("Local: couldn't apply metadata to song", e);
                 }
-            }],
-            content: this.#library
-        } satisfies Section];
+
+                this.#library.push(song);
+            }
+        } catch(e) {
+            console.error(e);
+        }
     }
 
-    search(search: string): Promise<Array<Song | Artist | SongList | Section> | null> | Array<Song | Artist | SongList | Section> | null {
-        Vibe.getDefault().addPage({
-            modal: PageModal.ARTIST,
-            content: new Artist({
-                name: "inabakumori",
-                displayName: "稲葉曇",
-                description: "Inabakumori’s career started with “Secret Music” on February 22, 2016 and has posted twenty two songs since then. A song that represents Inabakumori – “Lost Umbrella” has created noise internationally since 2021 with the self-insert fan posts on TikTok and has gained international fans that led to being listed on “Global Hits From Japan 2021&2022 – Japanese Music that Crosses Borders -.” Music since then has been played globally, especially in North America amongst the anime fans. Artwork and music video since this song have been created by popular illustrator Nukunukunigirimeshi. The light rhythm and the sound of techno rock that hints transience and the emotional lyrics are visually depicted in black and white in Nukunukunigirimeshi-created music videos. Currently, there are half a million subscribers on YouTube and over a million listeners on Spotify.",
-                image: GdkPixbuf.Pixbuf.new_from_resource("/io/github/retrozinndev/vibe/examples/lagtrain.jpg"),
-                plugin: this,
-                url: "https://open.spotify.com/artist/25b7eSZD64Sm8ReHZ1WDc7",
-            }),
-            title: "inabakumori",
-            buttons: [{
-                label: "Follow",
-                iconName: "test-pass-symbolic",
-                onClicked: () => print("follow this amazing artist!")
-            }],
-            sections: [{
-                title: "Songs",
-                description: "Nice songs not from this artist(sike!)",
+    getRecommendations(length?: number, offset?: number) {
+        return [
+            {
+                title: "Your Songs",
+                description: "Songs that have been found in the music directory",
+                type: "listrow",
+                headerButtons: [{
+                    label: "bleh!",
+                    onClicked: () => {
+                        print("haha!");
+                    }
+                }],
                 content: this.#library
-            }]
+            } satisfies Section
+        ];
+    }
+
+    search(search: string) {
+        const matchRegEx = new RegExp(search.split('').join('|'), 'i');
+
+        // TODO better search method
+        const results = this.#library.filter(item => {
+            if(item instanceof Song) 
+                return matchRegEx.test(
+                    item.title ?? item.artist.map(a => a.displayName ?? a.name).join(', ') ?? "Untitled"
+                );
+
+            return false;
         });
-        return this.#library;
+
+        return null;
     }
 
     getLibrary(length?: number, offset?: number): Promise<Array<SongList | Song | Artist> | null> | Array<SongList | Song | Artist> | null {

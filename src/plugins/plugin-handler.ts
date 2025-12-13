@@ -9,18 +9,14 @@ import { PluginLocal } from "./builtin/local";
 import { exportToGlobal } from "./exports";
 
 
-/** this is only for type's sake, so it works correctly when importing a plugin.
-    * you should not instantiate this class (or use this as a base)! */
-class FinalPlugin extends Plugin {
-    constructor() { super({ name: "FinalPlugin" }); }
-}
-// external and builtin plugins don't have constructor params, that's what FinalPlugin is for.
+// external and builtin plugins don't have constructor params, that's what PluginConstructor is for
+type PluginConstructor = new () => Plugin;
 
 @register({ GTypeName: "VibePluginHandler" })
 export default class PluginHandler extends GObject.Object {
 
     private static instance: PluginHandler;
-    #builtinPlugins: Array<typeof FinalPlugin> = [
+    #builtinPlugins: Array<PluginConstructor> = [
         PluginLocal
     ];
 
@@ -43,6 +39,10 @@ export default class PluginHandler extends GObject.Object {
 
         exportToGlobal();
 
+        this.loadPlugins();
+    }
+
+    private loadPlugins(): void {
         this.#builtinPlugins.forEach(pl =>
             this.importBultin(pl).catch(e => 
                 console.error(`An error occurred in built-in plugin(${
@@ -76,7 +76,7 @@ export default class PluginHandler extends GObject.Object {
         this.plugin = this.#plugins[0]; // TODO: save last-used plugin and load it here
     }
 
-    async importPlugin(file: string|Gio.File): Promise<FinalPlugin> {
+    async importPlugin(file: string|Gio.File): Promise<Plugin> {
         file = typeof file === "string" ?
             Gio.File.new_for_path(file)
         : file;
@@ -88,8 +88,8 @@ export default class PluginHandler extends GObject.Object {
         file.copy(pluginFile, Gio.FileCopyFlags.OVERWRITE, null, null); // TODO: implement progress bar; do this asynchronously
 
         const module: {
-            default: typeof FinalPlugin;
-            VibePlugin: typeof FinalPlugin;
+            default: PluginConstructor;
+            VibePlugin: PluginConstructor;
         } = (await import(pluginFile.get_path()!));
 
         const Plugin = module.default ?? module.VibePlugin;
@@ -112,7 +112,7 @@ export default class PluginHandler extends GObject.Object {
         return instance;
     }
 
-    async importBultin(plugin: typeof FinalPlugin): Promise<void> {
+    async importBultin(plugin: PluginConstructor): Promise<void> {
         const pl = new plugin();
         pl.status = "init";
         this.#builtins.push(pl);
