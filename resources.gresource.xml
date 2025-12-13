@@ -6,8 +6,13 @@
         <file alias="test-pass-symbolic.svg">resources/icons/test-pass-symbolic.svg</file>
         <file alias="person-symbolic.svg">resources/icons/person-symbolic.svg</file>
         <file alias="people-symbolic.svg">resources/icons/people-symbolic.svg</file>
+        <file alias="playlist-consecutive-symbolic.svg">resources/icons/playlist-consecutive-symbolic.svg</file>
+        <file alias="playlist-shuffle-symbolic.svg">resources/icons/playlist-shuffle-symbolic.svg</file>
         <file alias="plus-circle-outline-symbolic.svg">resources/icons/plus-circle-outline-symbolic.svg</file>
         <file alias="folder-music-symbolic.svg">resources/icons/folder-music-symbolic.svg</file>
+        <file alias="media-playlist-repeat-song-symbolic.svg">resources/icons/media-playlist-repeat-song-symbolic.svg</file>
+        <file alias="arrows-loop-tall-symbolic.svg">resources/icons/arrows-loop-tall-symbolic.svg</file>
+        <file alias="arrows-loop-tall-disabled-symbolic.svg">resources/icons/arrows-loop-tall-disabled-symbolic.svg</file>
     </gresource>
     <gresource prefix="/io/github/retrozinndev/vibe/data">
         <file alias="license">LICENSE</file>
