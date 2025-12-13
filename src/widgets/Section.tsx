@@ -1,7 +1,7 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import Pango from "gi://Pango?version=1.0";
-import { createBinding, For } from "gnim";
+import { Accessor, createBinding, For } from "gnim";
 import { getter, gtype, property, register } from "gnim/gobject";
 import {
     IconButton,
@@ -13,10 +13,11 @@ import {
 } from "libvibe";
 import { Artist, Song, SongList } from "libvibe/objects";
 import Media from "../modules/media";
-import { omitObjectKeys, toBoolean } from "../modules/util";
+import { omitObjectKeys } from "../modules/util";
 import Card from "./Card";
 import SmallCard from "./SmallCard";
 import { PageModal } from "libvibe/interfaces";
+import { toBoolean } from "gnim-utils";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -109,18 +110,20 @@ export default class Section extends Gtk.Box {
                 <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} minChildrenPerLine={2}>
                     {this.#content.map(item => {
                         if(item instanceof Song)
-                            return <SmallCard title={item.name ?? "Unnamed"}
-                              image={item.image ?? undefined}
-                              buttons={[{
-                                  id: "play-song",
-                                  iconName: "media-playback-start-symbolic",
-                                  onClicked: () => Media.getDefault().playSong(item, 0)
-                              }]}
-                            />
+                            return <Adw.Clamp maximumSize={364}>
+                                <SmallCard title={item.title ?? "Unnamed"}
+                                  image={createBinding(item, "image") as NonNullable<Accessor<never>>}
+                                  buttons={[{
+                                      id: "play-song",
+                                      iconName: "media-playback-start-symbolic",
+                                      onClicked: () => Media.getDefault().playSong(item, 0)
+                                  }]}
+                                />
+                            </Adw.Clamp>
 
                         if(item instanceof Artist)
                             return <SmallCard title={item.name ?? "Unknown Artist"}
-                              image={item.image ?? undefined}
+                              image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                               buttons={[{
                                   id: "play-song",
                                   iconName: "media-playback-start-symbolic",
@@ -129,9 +132,7 @@ export default class Section extends Gtk.Box {
                             />
 
                         return <SmallCard title={item.title ?? "No Title"} 
-                          // TODO: wait for internet provider's DNS to get back :broken_heart:, 
-                          // so I can add an image to the SongList(I already committed the feature,
-                          // but i can't push it because of the CLARO BR DNS blocking almost everything)
+                          image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                           buttons={[{
                               id: "play-songlist",
                               iconName: "media-playback-start-symbolic",
@@ -150,9 +151,9 @@ export default class Section extends Gtk.Box {
                           maximumSize={180} halign={Gtk.Align.START}>
                             {(() => {
                                 if(item instanceof Song)
-                                    return <Card title={item.name ?? "Unnamed"}
+                                    return <Card title={item.title ?? "Untitled"}
                                       description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
-                                      image={item.image ?? undefined}
+                                      image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                                       buttons={[{
                                           id: "play-song",
                                           iconName: "media-playback-start-symbolic",
@@ -162,7 +163,7 @@ export default class Section extends Gtk.Box {
 
                                 if(item instanceof Artist)
                                     return <Card title={item.name ?? "Unknown Artist"}
-                                      image={item.image ?? undefined}
+                                      image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                                       buttons={[{
                                           id: "play-song",
                                           iconName: "media-playback-start-symbolic",
@@ -185,7 +186,7 @@ export default class Section extends Gtk.Box {
 
                                 return <Card title={item.title ?? "No Title"}
                                   description={item.description ?? undefined}
-                                  image={item.image ?? undefined}
+                                  image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                                   buttons={[{
                                       id: "play-songlist",
                                       iconName: "media-playback-start-symbolic",

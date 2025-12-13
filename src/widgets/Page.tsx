@@ -17,6 +17,7 @@ import Section from "./Section";
 import { createSecureBinding } from "gnim-utils";
 import SongItem from "./SongItem";
 import Tab from "./Tab";
+import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 
 
 @register({ GTypeName: "VibePage" })
@@ -77,9 +78,19 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
                     <Gtk.Box class="header" orientation={Gtk.Orientation.HORIZONTAL} hexpand>
                         <Gtk.Image hexpand={false} visible={Boolean((this.#content as Artist).image)} 
                           pixelSize={128}
-                          $={(self) => self.set_from_pixbuf(
-                              (this.#content as Artist).image
-                          )}
+                          $={(self) => {
+                              const img = (this.#content as Artist).image;
+
+                              if(!img)
+                                  return;
+
+                              if(img instanceof GdkPixbuf.Pixbuf) {
+                                  self.set_from_pixbuf(img);
+                                  return;
+                              }
+
+                              self.set_from_paintable(img);
+                          }}
                         />
                         <Gtk.Box class="data" orientation={Gtk.Orientation.VERTICAL} valign={Gtk.Align.CENTER}>
                             <Gtk.Label xalign={0} label={(this.#content as Artist).displayName ??
@@ -111,16 +122,25 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
                   spacing={16}>
 
                     <Gtk.Box class="header" orientation={Gtk.Orientation.HORIZONTAL} hexpand>
-                        <Gtk.Picture canShrink={false} contentFit={Gtk.ContentFit.COVER} 
-                          hexpand={false} visible={Boolean((this.#content as Song).image ?? 
+                        <Gtk.Picture canShrink={false} contentFit={Gtk.ContentFit.COVER} keepAspectRatio={false}
+                          widthRequest={128} hexpand={false} visible={Boolean((this.#content as Song).image ?? 
                               (this.#content as Song).album?.image)
-                          } $={(self) => self.set_pixbuf(
-                              (this.#content as Song).image ??
-                                  (this.#content as Song).album?.image
-                          )}
+                          } $={(self) => {
+                              const img = (this.#content as Artist).image;
+
+                              if(!img)
+                                  return;
+
+                              if(img instanceof GdkPixbuf.Pixbuf) {
+                                  self.set_pixbuf(img);
+                                  return;
+                              }
+                              
+                              self.set_paintable(img);
+                          }}
                         />
                         <Gtk.Box class="data" orientation={Gtk.Orientation.VERTICAL}>
-                            <Gtk.Label xalign={0} label={(this.#content as Song).name ??
+                            <Gtk.Label xalign={0} label={(this.#content as Song).title ??
                                   "Untitled Song"
                               } class={"title-1"} ellipsize={Pango.EllipsizeMode.END}
                             />
@@ -152,9 +172,19 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
                     <Gtk.Box class="header" orientation={Gtk.Orientation.HORIZONTAL} hexpand>
                         <Gtk.Picture canShrink={false} contentFit={Gtk.ContentFit.COVER} 
                           hexpand={false} visible={Boolean((this.#content as Album).image)}
-                          $={(self) => self.set_pixbuf(
-                              (this.#content as Album).image
-                          )}
+                          $={(self) => {
+                              const img = (this.#content as Album).image;
+
+                              if(!img)
+                                  return;
+
+                              if(img instanceof GdkPixbuf.Pixbuf) {
+                                  self.set_pixbuf(img);
+                                  return;
+                              }
+
+                              self.set_paintable(img);
+                          }}
                         />
                         <Gtk.Box class="data" orientation={Gtk.Orientation.VERTICAL}>
                             <Gtk.Label xalign={0} label={(this.#content as Album).title ??
@@ -185,9 +215,19 @@ export class Page<M extends PageModal = PageModal.CUSTOM> extends Adw.Bin implem
                     <Gtk.Box class="header" orientation={Gtk.Orientation.HORIZONTAL} hexpand>
                         <Gtk.Picture canShrink={false} contentFit={Gtk.ContentFit.COVER} 
                           hexpand={false} visible={Boolean((this.#content as Playlist).image)}
-                          $={(self) => self.set_pixbuf(
-                              (this.#content as Playlist).image
-                          )}
+                          $={(self) => {
+                              const img = (this.#content as Playlist).image;
+
+                              if(!img)
+                                  return;
+
+                              if(img instanceof GdkPixbuf.Pixbuf) {
+                                  self.set_pixbuf(img);
+                                  return;
+                              }
+
+                              self.set_paintable(img);
+                          }}
                         />
                         <Gtk.Box class="data" orientation={Gtk.Orientation.VERTICAL}>
                             <Gtk.Label xalign={0} label={(this.#content as Playlist).title ??

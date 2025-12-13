@@ -3,10 +3,11 @@ import Gdk from "gi://Gdk?version=4.0";
 import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, For } from "gnim";
-import { getter, gtype, property, register, signal } from "gnim/gobject";
+import GObject, { gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, isLabelButton, LabelButton } from "libvibe";
-import { createScopedConnection, omitObjectKeys, toBoolean } from "../modules/util";
+import { createScopedConnection, toBoolean } from "gnim-utils";
 import Pango from "gi://Pango?version=1.0";
+import { omitObjectKeys } from "../modules/util";
 
 
 @register({ GTypeName: "VibeSmallCard" })
@@ -15,8 +16,6 @@ export default class SmallCard extends Adw.Bin {
         "clicked": () => void;
         "button-clicked": (button: IconButton|LabelButton) => void;
     };
-
-    #image: GdkPixbuf.Pixbuf|null = null;
 
     @signal()
     clicked() {};
@@ -30,13 +29,13 @@ export default class SmallCard extends Adw.Bin {
     @property(Array<IconButton|LabelButton>)
     buttons: Array<IconButton|LabelButton> = [];
 
-    @getter(gtype<GdkPixbuf.Pixbuf|null>(GdkPixbuf.Pixbuf))
-    get image() { return this.#image; }
+    @property(gtype<GdkPixbuf.Pixbuf|Gdk.Texture|null>(GObject.Object))
+    image: GdkPixbuf.Pixbuf|Gdk.Texture|null = null;
 
 
     constructor(props: {
         title: string;
-        image?: GdkPixbuf.Pixbuf;
+        image?: GdkPixbuf.Pixbuf|Gdk.Texture;
         buttons?: Array<IconButton|LabelButton>;
     } & Partial<Adw.Bin.ConstructorProps>) {
         super({
@@ -52,7 +51,7 @@ export default class SmallCard extends Adw.Bin {
 
         this.title = props.title;
         if(props.image !== undefined)
-            this.#image = props.image;
+            this.image = props.image;
 
         if(props.buttons !== undefined)
             this.buttons.push(...props.buttons);
@@ -70,11 +69,23 @@ export default class SmallCard extends Adw.Bin {
         this.set_child(
             <Gtk.CenterBox>
                 <Gtk.Box $type="start">
-                    {this.#image && 
-                        <Gtk.Image pixelSize={24} class={"art"}
-                          $={(self) => self.set_from_pixbuf(this.#image)} 
-                        />
-                    }
+                    <Gtk.Image pixelSize={24} class={"art"}
+                      $={(self) => {
+                          if(!this.image) {
+                              self.set_from_resource(
+                                  "/io/github/retrozinndev/vibe/icons/io.github.retrozinndev.vibe-symbolic.svg"
+                              );
+                              return;
+                          }
+
+                          if(this.image instanceof GdkPixbuf.Pixbuf) {
+                              self.set_from_pixbuf(this.image);
+                              return;
+                          }
+
+                          self.set_from_paintable(this.image);
+                      }} 
+                    />
                     <Gtk.Label label={createBinding(this, "title")} xalign={0} 
                       ellipsize={Pango.EllipsizeMode.END}
                     />

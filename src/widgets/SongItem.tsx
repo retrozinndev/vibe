@@ -3,10 +3,12 @@ import Gtk from "gi://Gtk?version=4.0";
 import { createBinding } from "gnim";
 import { getter, property, register } from "gnim/gobject";
 import { Song } from "libvibe/objects";
-import { createScopedConnection, omitObjectKeys } from "../modules/util";
-import SongPopover from "./SongPopover";
+import { omitObjectKeys } from "../modules/util";
+import { createScopedConnection } from "gnim-utils";
+import { SecondaryMenu } from "./SecondaryMenu";
 import Gdk from "gi://Gdk?version=4.0";
 import { Vibe } from "libvibe";
+import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 
 
 // TODO
@@ -38,9 +40,7 @@ export default class extends Adw.Bin {
             this.buttons = props.buttons;
 
         const image = props.song.image ?? props.song.album?.image;
-        const popover = <SongPopover extraButtons={createBinding(this, "buttons")} 
-          song={props.song}
-        /> as SongPopover;
+        const popover = <SecondaryMenu buttons={createBinding(this, "buttons")} /> as SecondaryMenu;
 
         const click = Gtk.GestureClick.new();
         this.add_controller(click);
@@ -80,15 +80,18 @@ export default class extends Adw.Bin {
                             <Gtk.Picture contentFit={Gtk.ContentFit.CONTAIN} 
                               widthRequest={64}
                               $={(self) => {
-                                  self.set_pixbuf(
-                                      image ?? null
-                                  );
+                                  if(image instanceof GdkPixbuf.Pixbuf) {
+                                      self.set_pixbuf(image);
+                                      return;
+                                  }
+
+                                  self.set_paintable(image);
                               }}
                             />
                         }
 
                         <Gtk.Box class={"data"} orientation={Gtk.Orientation.VERTICAL}>
-                            <Gtk.Label label={props.song.name ?? "No Title"} xalign={0} />
+                            <Gtk.Label label={props.song.title ?? "No Title"} xalign={0} />
                             <Gtk.Label label={props.song.artist?.map(artist =>
                                 artist.displayName ?? artist.name ?? "Unknown Artist"
                             ).join(", ")} xalign={0} class={"dimmed body"} />
