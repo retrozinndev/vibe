@@ -29,6 +29,7 @@ jobs:
       
       - name: "Install dependencies"
         run: |
+          sudo apt update -y
           sudo apt install -y --fix-broken libglib2.0-dev gobject-introspection libgirepository1.0-dev build-essential gjs
           pnpm install
 
