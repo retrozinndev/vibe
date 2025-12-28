@@ -1,6 +1,7 @@
 [Desktop Entry]
 Name=Vibe
 Comment=The craziest music player!
+Icon=folder-music-symbolic
 Type=Application
-Exec=sh -c "$VIBE_BINARY"
+Exec=$VIBE_BINARY
 StartupWMClass=io.github.retrozinndev.Vibe
