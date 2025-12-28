@@ -5,9 +5,9 @@ window .container {
 flowboxchild:hover,
 flowboxchild:focus,
 flowboxchild:focus-visible,
-listboxchild:hover,
-listboxchild:focus,
-listboxchild:focus-visible {
+list > row:hover,
+list > row:focus,
+list > row:focus-visible {
   background: none;
 }
 
@@ -35,14 +35,18 @@ listboxchild:focus-visible {
   }
 }
 
-.omniplayer 
-
+$card-radius: 18px;
 card {
   padding: 12px;
-  border-radius: 20px;
+  border-radius: $card-radius;
   transition: 120ms linear;
-  min-width: 110px;
+  min-width: 106px;
+  min-height: 160px;
   background: var(--card-bg-color);
+
+  & picture {
+    border-radius: 10px;
+  }
 }
 
 smallcard {
@@ -78,8 +82,20 @@ page {
       };
     }
 
-    & .results {
-      padding: 10px 0;
+    & list {
+      background: none;
+
+      & > row {
+        $padding: 12px;
+        $radius: 28px;
+
+        padding: $padding;
+        border-radius: $radius;
+
+        & card {
+          border-radius: calc($radius - $padding);
+        }
+      }
     }
   }
 
@@ -94,12 +110,8 @@ page {
   }
 }
 
-section {
-  margin-bottom: 16px;
-
-  & .description {
-    margin-bottom: 6px;
-  }
+section > box {
+  margin-bottom: 10px;
 }
 
 popup .container {
