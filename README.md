@@ -11,12 +11,12 @@ This is only a demonstration, some UI elements don't work as intended.
 
 
 ## Goals
-- Play(and maybe stream from tcp/udp) music
-- Implement MPRIS
-- Use TypeScript and [Gnim](https://github.com/aylur/gnim) with GJS
-- Internationalization (i18n)
-- Pretty attractive but familiar interface
-- Plugin support (for adding new sources and features...)
+- [x] Play music locally
+- [x] Adwaita-based UI, but keeping it familiar to other apps
+- [x] Plugin support (for adding new sources and features...)
+- [ ] Play music through raw streams
+- [ ] Implement MPRIS
+- [ ] Internationalization (i18n)
 
 ## :hammer_and_wrench: Development
 This will guide you on how to develop for the Vibe Music Player.
