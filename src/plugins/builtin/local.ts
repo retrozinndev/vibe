@@ -1,7 +1,7 @@
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
-import { Section } from "libvibe";
+import { Section, Vibe } from "libvibe";
 import { SongList, Song, Artist, Meta } from "libvibe/objects";
 import { Plugin } from "libvibe/plugin";
 
@@ -11,10 +11,9 @@ export class PluginLocal extends Plugin {
     supportedFormats: Array<string> = [
         "m4a",
         "flac",
-        "mkv",
         "ogg",
         "weba",
-        "mp3", // add more if needed (this is only for format checking)
+        "mp3"
     ];
 
     #library: Array<Song|SongList|Artist> = [];
@@ -79,6 +78,9 @@ export class PluginLocal extends Plugin {
                     console.log("Local: couldn't apply metadata to song", e);
                 }
 
+                if(song.title === null)
+                    song.title = item.get_name();
+
                 this.#library.push(song);
             }
         } catch(e) {
@@ -103,20 +105,56 @@ export class PluginLocal extends Plugin {
         ];
     }
 
-    search(search: string) {
-        const matchRegEx = new RegExp(search.split('').join('|'), 'i');
+    
+    // TODO better search method
+    match(search: string, item: Song|SongList|string): boolean {
+        search = search.replace(/[\\^$.*?()[\]{}|]/g, "\\$&");
 
-        // TODO better search method
-        const results = this.#library.filter(item => {
-            if(item instanceof Song) 
-                return matchRegEx.test(
-                    item.title ?? item.artist.map(a => a.displayName ?? a.name).join(', ') ?? "Untitled"
-                );
+        return new RegExp(`${search.split('').map(c => 
+            `${c}`).join('')}`,
+        "gi").test(typeof item !== "string" ?
+            item instanceof Song ?
+                `${item.title} ${item.artist.map(a => a.displayName ?? a.name).join(';')}`
+            : item.title ?? "Untitled List"
+        : item);
+    }
 
-            return false;
+    async search(search: string) {
+        const results: Record<string, Array<Song|SongList|Artist>> = {
+            songs: [],
+            artists: [],
+            albums: [],
+            playlists: []
+        };
+
+        this.#library.forEach(item => {
+            if(item instanceof Song && this.match(search, item)) {
+                results.songs.unshift(item);
+                return;
+            }
+
+            if(item instanceof SongList && this.match(search, item)) {
+                results.albums.unshift(item);
+                return;
+            }
         });
 
-        return null;
+        Vibe.getDefault().artists.filter(d => d.plugin === this).forEach(data => {
+            if(this.match(search, data.artist.displayName ?? data.artist.name ?? "Unnamed Artist")) 
+                results.artists.unshift(data.artist);
+        });
+
+        return Object.keys(results).filter(key => 
+            results[key as keyof typeof results].length > 0
+        ).map(key => {
+            const data = results[key as keyof typeof results];
+
+            return {
+                title: key.replace(/^./, (c) => c.toUpperCase()),
+                content: data,
+                type: "row"
+            } satisfies Section;
+        });
     }
 
     getLibrary(length?: number, offset?: number): Promise<Array<SongList | Song | Artist> | null> | Array<SongList | Song | Artist> | null {
