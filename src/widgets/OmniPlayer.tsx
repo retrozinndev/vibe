@@ -64,24 +64,6 @@ export default () =>
                     </With>
                 </Gtk.Box>
                 <Gtk.Box $type="center" halign={Gtk.Align.CENTER} orientation={Gtk.Orientation.VERTICAL}>
-                    <Gtk.Scale class={"slider"} drawValue={false} $={(self) => {
-                        self.set_value(0);
-                        self.set_range(0, 1);
-
-                        const connections = [
-                            Media.getDefault().connect("notify::position", (media) => {
-                                self.set_value(media.position);
-                            }),
-                            Media.getDefault().connect("notify::length", (media) => {
-                                self.set_range(0, media.length);
-                            })
-                        ];
-
-                        getScope().onCleanup(() => connections.forEach(id => Media.getDefault().disconnect(id)));
-
-
-                    }} />
-
                     <Gtk.Box class={"controls"} spacing={6}>
                         <Gtk.Button class={"shuffle flat"} iconName={createBinding(Media.getDefault(), "shuffle")
                           .as(shuffle => shuffle === ShuffleMode.SHUFFLE ?
@@ -138,24 +120,33 @@ export default () =>
                               return "arrows-loop-tall-disabled-symbolic";
                           })}
                           onClicked={() => {
-                              if(Media.getDefault().loop === LoopMode.SONG) {
-                                  Media.getDefault().loop = LoopMode.NONE;
-                                  return;
-                              }
+                              if(Media.getDefault().loop === LoopMode.NONE)
+                                  return Media.getDefault().loop = LoopMode.LIST;
 
-                              if(Media.getDefault().loop === LoopMode.LIST) {
-                                  Media.getDefault().loop = LoopMode.SONG;
-                                  return;
-                              }
-
-                              if(Media.getDefault().loop === LoopMode.NONE) {
-                                  Media.getDefault().loop = LoopMode.LIST;
-                                  return;
-                              }
+                              if(Media.getDefault().loop === LoopMode.LIST)
+                                  return Media.getDefault().loop = LoopMode.SONG;
 
                               Media.getDefault().loop = LoopMode.NONE;
                           }}
                         />
+
+                        <Gtk.Scale visible={false} class={"slider"} drawValue={false} $={(self) => {
+                            self.set_value(0);
+                            self.set_range(0, 1);
+
+                            const connections = [
+                                Media.getDefault().connect("notify::position", (media) => {
+                                    console.log(media.position);
+                                    self.set_value(media.position);
+                                }),
+                                Media.getDefault().connect("notify::length", (media) => {
+                                    console.log(media.length);
+                                    self.set_range(0, media.length);
+                                })
+                            ];
+
+                            getScope().onCleanup(() => connections.forEach(id => Media.getDefault().disconnect(id)));
+                        }} />
                     </Gtk.Box>
                 </Gtk.Box>
                 <Gtk.Box $type="end" />

@@ -1,9 +1,8 @@
-import Adw from "gi://Adw?version=1";
 import Gdk from "gi://Gdk?version=4.0";
 import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import Gio from "gi://Gio?version=2.0";
 import Gtk from "gi://Gtk?version=4.0";
-import { createBinding, For } from "gnim";
+import { Accessor, createBinding, For, With } from "gnim";
 import GObject, { gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, isIconButton, LabelButton } from "libvibe";
 import { omitObjectKeys } from "../modules/util";
@@ -19,7 +18,7 @@ import { SecondaryMenu } from "./SecondaryMenu";
 * Use this to display some information for a plugin, or even an Album/Song.
 */
 @register({ GTypeName: "VibeCard" })
-export default class Card extends Adw.Bin {
+export default class Card extends Gtk.Box {
     declare $signals: Card.SignalSignatures;
 
     /** signal ::clicked, emitted when the user clicks in the card(not in the buttons) */
@@ -37,9 +36,6 @@ export default class Card extends Adw.Bin {
     /** the card's secondary text, can be null */
     @property(gtype<string|null>(String))
     description: string|null = null;
-
-    @property(Number)
-    imageHeight: number = 95;
 
     /** the card's image in pixbuf or texture format, can be null */
     @property(gtype<GdkPixbuf.Pixbuf|Gdk.Texture|null>(GObject.Object))
@@ -87,9 +83,6 @@ export default class Card extends Adw.Bin {
 
         this.title = props.title;
 
-        if(props.imageHeight !== undefined)
-            this.imageHeight = props.imageHeight;
-
         if(props.description !== undefined)
             this.description = props.description;
 
@@ -131,62 +124,73 @@ export default class Card extends Adw.Bin {
     }
 
     private build(): void {
-        this.set_child(
-            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                <Gtk.Picture contentFit={Gtk.ContentFit.COVER} heightRequest={createBinding(this, "imageHeight")}
-                  $={(self) => {
-                      createSubscription(
-                          createBinding(this, "image"),
-                          () => {
-                              if(!this.image) {
-                                  self.set_resource(
-                                      "/io/github/retrozinndev/vibe/icons/io.github.retrozinndev.vibe-symbolic"
-                                  );
-                                  return;
-                              }
-
-                              if(this.image instanceof GdkPixbuf.Pixbuf) {
-                                  self.set_pixbuf(this.image);
-                                  return;
-                              }
-
-                              self.set_paintable(this.image);
+        this.set_orientation(Gtk.Orientation.VERTICAL);
+        this.prepend(
+            <Gtk.Picture contentFit={Gtk.ContentFit.COVER} canShrink keepAspectRatio halign={Gtk.Align.CENTER}
+              $={(self) => {
+                  createSubscription(
+                      createBinding(this, "image"),
+                      () => {
+                          if(!this.image) {
+                              self.set_resource(
+                                  "/io/github/retrozinndev/vibe/icons/io.github.retrozinndev.vibe-symbolic"
+                              );
+                              return;
                           }
-                      );
-                  }} visible={toBoolean(createBinding(this, "image"))}
-                />
-                
-                <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                    <Gtk.Label label={createBinding(this, "title")} 
-                      visible={toBoolean(createBinding(this, "title"))}
-                      class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
-                      xalign={0}
-                    />
-                    <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
-                      visible={toBoolean(createBinding(this, "description"))}
-                      class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
-                    />
-                </Gtk.Box>
-                <Gtk.Separator />
-                <Gtk.Box hexpand visible={toBoolean(
-                      createBinding(this, "buttons")
-                  )} halign={createBinding(this, "buttonAlign")}
-                  homogeneous={false}>
 
-                    <For each={createBinding(this, "buttons").as(b => b!)}>
-                        {(button: IconButton|LabelButton) =>
-                            <Gtk.Button iconName={isIconButton(button) ?
-                                button.iconName : undefined
-                              } label={!isIconButton(button) ?
-                                button.label : undefined
-                              } onClicked={() => {
-                                  this.emit("button-clicked", button);
-                                  button.onClicked?.();
-                              }} class={"flat"}
-                            />
-                        }
-                    </For>
-                </Gtk.Box>
+                          if(this.image instanceof GdkPixbuf.Pixbuf) {
+                              self.set_pixbuf(this.image);
+                              return;
+                          }
+
+                          self.set_paintable(this.image);
+                      }
+                  );
+              }} visible={toBoolean(createBinding(this, "image"))}
+            /> as Gtk.Picture
+        );
+        
+        this.append(
+            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                <Gtk.Label label={createBinding(this, "title")} 
+                  visible={toBoolean(createBinding(this, "title"))}
+                  class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
+                  xalign={0}
+                />
+                <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
+                  visible={toBoolean(createBinding(this, "description"))}
+                  class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
+                />
+            </Gtk.Box> as Gtk.Box
+        );
+
+        this.append(
+            <Gtk.Separator /> as Gtk.Widget
+        );
+
+        this.append(
+            <Gtk.Box hexpand halign={createBinding(this, "buttonAlign")} 
+              visible={toBoolean(createBinding(this, "buttons"))}>
+
+                <With value={toBoolean(createBinding(this, "buttons")) as Accessor<boolean>}>
+                    {hasButtons => hasButtons && 
+                        <Gtk.Box>
+                            <For each={createBinding(this, "buttons").as(b => b!)}>
+                                {(button: IconButton|LabelButton) =>
+                                    <Gtk.Button iconName={isIconButton(button) ?
+                                        button.iconName : undefined
+                                      } label={!isIconButton(button) ?
+                                        button.label : undefined
+                                      } onClicked={() => {
+                                          this.emit("button-clicked", button);
+                                          button.onClicked?.();
+                                      }} class={"flat"}
+                                    />
+                                }
+                            </For>
+                        </Gtk.Box>
+                    }
+                </With>
             </Gtk.Box> as Gtk.Box
         );
     }
@@ -312,7 +316,7 @@ export default class Card extends Adw.Bin {
 }
 
 export namespace Card {
-    export interface SignalSignatures extends Adw.Bin.SignalSignatures {
+    export interface SignalSignatures extends Gtk.Box.SignalSignatures {
         "clicked": () => void;
         "button-clicked": (button: IconButton|LabelButton) => void;
         "notify::title": (title: string) => void;
@@ -321,7 +325,7 @@ export namespace Card {
         "notify::buttons": (buttons: Array<IconButton|LabelButton>|null) => void;
     }
 
-    export type ConstructorProps = Partial<Adw.Bin.ConstructorProps> & {
+    export type ConstructorProps = Partial<Gtk.Box.ConstructorProps> & {
         title: string;
         description?: string;
         image?: GdkPixbuf.Pixbuf|Gdk.Texture|string|Gio.File;

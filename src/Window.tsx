@@ -11,7 +11,6 @@ import OmniPlayer from "./widgets/OmniPlayer";
 import Tab from "./widgets/Tab";
 import PluginSelector from "./widgets/PluginSelector";
 import { Page as PageWidget } from "./widgets/Page";
-import { PageModal } from "libvibe/interfaces";
 import { Pages } from "./pages";
 
 
@@ -37,14 +36,11 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
         new Library()
     ];
 
-    pages = <Pages initialPage={new PageWidget({
-          modal: PageModal.CUSTOM,
-          title: "Welcome to Vibe!"
-      })} 
-      transitionType={Gtk.StackTransitionType.SLIDE_LEFT} transitionDuration={400} 
+    pages = <Pages transitionType={Gtk.StackTransitionType.SLIDE_UP_DOWN} 
+      transitionDuration={400} 
       $={(self) => {
           tabs.forEach(tab => tab.page &&
-              self.add_named(tab.page, String(tab.id))
+              self.addStatic(tab.page)
           );
       }}
     /> as Pages;
@@ -60,17 +56,30 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                       class={"sidebar-container"}>
 
                         <Adw.HeaderBar class={"flat"}>
-                            <Gtk.Button class={"info flat"} iconName={"help-about-symbolic"}
-                              $type="start" onClicked={(self) => {
-                                  const dialog = Adw.AboutDialog.new();
-                                  dialog.set_application_name("Vibe");
-                                  dialog.set_application_icon("folder-music-symbolic");
-                                  dialog.set_version(App.get_default().version);
-                                  dialog.set_license(App.get_default().license);
-                                  dialog.set_website("https://github.com/retrozinndev/vibe");
-                                  dialog.present(self.root);
-                              }}
-                            />
+                            <Gtk.MenuButton class={"more flat"} iconName={"open-menu-symbolic"}
+                              $type="start">
+
+                                <Gtk.Popover $type="popover" $={popover => {
+                                    popover.set_child(
+                                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                                            <Gtk.Button class={"flat"} label={"Settings"} />
+                                            <Gtk.Button class={"flat"} label={"About"} onClicked={(self) => {
+                                                const dialog = Adw.AboutDialog.new();
+                                                dialog.set_application_name("Vibe");
+                                                dialog.set_application_icon("folder-music-symbolic");
+                                                dialog.set_version(App.get_default().version);
+                                                dialog.set_license(App.get_default().license);
+                                                dialog.set_developer_name("retrozinndev");
+                                                dialog.set_developers(["João Dias"]);
+                                                dialog.set_website("https://github.com/retrozinndev/vibe");
+                                                dialog.present(self.root);
+
+                                                popover.popdown();
+                                            }} />
+                                        </Gtk.Box> as Gtk.Box
+                                    );
+                                }} />
+                            </Gtk.MenuButton>
                             <Gtk.Label class="heading" label="Vibe" $type="title" />
                             <PluginSelector $type="end" />
                         </Adw.HeaderBar>
@@ -83,6 +92,8 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                                       tab.id,
                                       Gtk.StackTransitionType.SLIDE_UP_DOWN
                                   );
+
+                                  pages.lastStaticPage = tab.page;
                               }} 
                               visible={createBinding(tab, "visible")}
                               label={createBinding(tab, "title")}
@@ -91,7 +102,6 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                               )}
                             />
                         )}
-
                     </Gtk.Box>
                 </Adw.NavigationPage>
 
@@ -102,7 +112,7 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                     <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
                         <Adw.HeaderBar class={"flat"}>
                             <Gtk.Button iconName={"go-previous-symbolic"} $type="start" 
-                              visible={createBinding(pages, "history").as(hist => hist.length > 1)}
+                              visible={createBinding(pages, "canGoBack")}
                               onClicked={() => pages.back()}
                             />
                         </Adw.HeaderBar>

@@ -76,7 +76,7 @@ export default class Section extends Gtk.Box {
         this.set_orientation(Gtk.Orientation.VERTICAL);
         this.append(
             <Gtk.CenterBox orientation={Gtk.Orientation.HORIZONTAL}>
-                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} $type="start">
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} class={"start"} $type="start">
                     <Gtk.Label class={"title title-1"} label={createBinding(this, "title")} 
                       xalign={0} ellipsize={Pango.EllipsizeMode.END}
                     />
@@ -107,11 +107,13 @@ export default class Section extends Gtk.Box {
 
         this.append(
             this.#type === "listrow" ?
-                <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} minChildrenPerLine={2}>
+                <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} minChildrenPerLine={2} selectionMode={Gtk.SelectionMode.NONE}
+                  hexpand>
+
                     {this.#content.map(item => {
                         if(item instanceof Song)
                             return <Adw.Clamp maximumSize={364}>
-                                <SmallCard title={item.title ?? "Unnamed"}
+                                <SmallCard title={item.title ?? "Unnamed"} class={"card"}
                                   image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                                   buttons={[{
                                       id: "play-song",
@@ -122,16 +124,22 @@ export default class Section extends Gtk.Box {
                             </Adw.Clamp>
 
                         if(item instanceof Artist)
-                            return <SmallCard title={item.name ?? "Unknown Artist"}
+                            return <SmallCard title={item.name ?? "Unknown Artist"} class={"card"}
                               image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                               buttons={[{
                                   id: "play-song",
                                   iconName: "media-playback-start-symbolic",
-                                  onClicked: () => { /* TODO: redirect to artist page */ }
+                                  onClicked: () => {
+                                      Vibe.getDefault().addPage({
+                                          modal: PageModal.ARTIST,
+                                          content: item,
+                                          title: item.displayName ?? item.name ?? "Unnamed Artist"
+                                      });
+                                  }
                               }]}
                             />
 
-                        return <SmallCard title={item.title ?? "No Title"} 
+                        return <SmallCard title={item.title ?? "No Title"} class={"card"}
                           image={createBinding(item, "image") as NonNullable<Accessor<never>>}
                           buttons={[{
                               id: "play-songlist",
@@ -141,62 +149,51 @@ export default class Section extends Gtk.Box {
                         />
                     })}
                 </Gtk.FlowBox> as Gtk.FlowBox
-            : <Gtk.ScrolledWindow vscrollbarPolicy={Gtk.PolicyType.NEVER} 
-              hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} hexpand>
-                <Gtk.Box orientation={Gtk.Orientation.HORIZONTAL} halign={Gtk.Align.START}
-                  spacing={10}>
+            : <Gtk.ScrolledWindow propagateNaturalWidth hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
+              vscrollbarPolicy={Gtk.PolicyType.NEVER}>
+                <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} rowSpacing={10} homogeneous 
+                  selectionMode={Gtk.SelectionMode.NONE} 
+                  $={self => {
+                      this.#content.map(item => {
+                          if(item instanceof Song)
+                              return Card.new_for_song(item, undefined, () => {
+                                  Vibe.getDefault().addPage({
+                                      modal: PageModal.SONG,
+                                      content: item,
+                                      title: item.title ?? "Untitled Song",
+                                      buttons: item.artist.map(artist => ({
+                                          label: `Go to ${artist.displayName ?? artist.name}`,
+                                          iconName: "person-symbolic",
+                                          onClicked: () => Vibe.getDefault().addPage({
+                                              modal: PageModal.ARTIST,
+                                              content: artist,
+                                              title: artist.displayName ?? artist.name
+                                          })
+                                      }))
+                                  })
+                              });
 
-                    {this.#content.map(item => 
-                        <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} 
-                          maximumSize={180} halign={Gtk.Align.START}>
-                            {(() => {
-                                if(item instanceof Song)
-                                    return <Card title={item.title ?? "Untitled"}
-                                      description={item.artist?.map(a => a.name).join(', ') ?? "Unknown Artist"}
-                                      image={createBinding(item, "image") as NonNullable<Accessor<never>>}
-                                      buttons={[{
-                                          id: "play-song",
-                                          iconName: "media-playback-start-symbolic",
-                                          onClicked: () => Media.getDefault().playSong(item, 0)
-                                      }]}
-                                    />
+                          if(item instanceof Artist)
+                              return Card.new_for_artist(item, undefined, () => Vibe.getDefault().addPage({
+                                  modal: PageModal.ARTIST,
+                                  content: item,
+                                  title: item.displayName ?? item.name
+                              }));
 
-                                if(item instanceof Artist)
-                                    return <Card title={item.name ?? "Unknown Artist"}
-                                      image={createBinding(item, "image") as NonNullable<Accessor<never>>}
-                                      buttons={[{
-                                          id: "play-song",
-                                          iconName: "media-playback-start-symbolic",
-                                          onClicked: () => {
-                                              if(!item.name)
-                                                  return;
+                          return Card.new_for_songlist(item);
+                    }).forEach(card => {
+                        card.add_css_class("card");
 
-                                              Vibe.getDefault().addPage({
-                                                  modal: PageModal.ARTIST,
-                                                  content: item,
-                                                  title: item.name,
-                                                  sections: [{
-                                                      title: "Top"
-                                                      // TODO add song 
-                                                  }]
-                                              });
-                                          }
-                                      }]}
-                                    />
+                        self.insert(
+                            <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} maximumSize={106}>
+                                {card}
+                            </Adw.Clamp> as Adw.Clamp,
+                        -1);
 
-                                return <Card title={item.title ?? "No Title"}
-                                  description={item.description ?? undefined}
-                                  image={createBinding(item, "image") as NonNullable<Accessor<never>>}
-                                  buttons={[{
-                                      id: "play-songlist",
-                                      iconName: "media-playback-start-symbolic",
-                                      onClicked: () => Media.getDefault().playList(item, 0)
-                                  }]}
-                                />
-                            })()}
-                        </Adw.Clamp>
-                    )}
-                </Gtk.Box>
+                        (self.get_last_child() as Gtk.FlowBoxChild).set_hexpand(false);
+                    });
+                  }}
+                />
             </Gtk.ScrolledWindow> as Gtk.ScrolledWindow
         );
     }

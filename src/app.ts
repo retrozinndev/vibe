@@ -103,7 +103,7 @@ export class App extends Adw.Application {
                     }
 
                     return path;
-                }).join('/')
+                }).join('/').replace(/^./, (c) => !/^(\/|\.)/.test(c) ? `/${c}` : c)
             );
 
             Gio.resources_register(this.#gresource);
