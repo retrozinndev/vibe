@@ -1,5 +1,6 @@
 import GLib from "gi://GLib?version=2.0";
 import Gst from "gi://Gst?version=1.0";
+import { createRoot, getScope, Scope } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { LoopMode, MediaSignalSignatures, PlaybackStatus, ShuffleMode, Media as VibeMedia } from "libvibe/interfaces";
 import { Song, SongList, Queue } from "libvibe/objects";
@@ -12,12 +13,13 @@ export default class Media extends GObject.Object implements VibeMedia {
 
     declare $signals: MediaSignalSignatures;
 
-    readonly #playbin!: Gst.Pipeline;
+    #scope: Scope = createRoot(() => getScope());
+    #pipeline!: Gst.Pipeline;
     #length: number = 0;
     #position: number = 0;
-    #gstBus: Gst.Bus;
     #queue: Queue = new Queue();
     #status: PlaybackStatus = PlaybackStatus.STOPPED;
+    #intervals: Array<GLib.Source> = [];
     #song: Song|null = null;
     
     /** the active song, can be null */
@@ -41,7 +43,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(!this.#song || this.#status === PlaybackStatus.STOPPED)
             return;
 
-        this.#playbin.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, newPos);
+        this.#pipeline?.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, newPos * Gst.SECOND);
     }
 
     @property(gtype<LoopMode>(Number))
@@ -70,30 +72,12 @@ export default class Media extends GObject.Object implements VibeMedia {
 
         Gst.init([]);
         if(!Gst.is_initialized())
-            throw new Error("Gst didn't get initialized! abort!!");
-
-        this.#playbin = Gst.ElementFactory.make("playbin3", "vibe_player") as Gst.Pipeline;
-        this.#gstBus = this.#playbin.get_bus();
-
-        this.#gstBus.add_signal_watch();
-        this.#gstBus.add_watch(GLib.PRIORITY_DEFAULT, (_, msg) => {
-            switch(msg.type) {
-                case Gst.MessageType.EOS:
-                    // song ended, so we go to the next one from queue
-                    this.next();
-                break;
-            }
-
-            this.#position = this.getPosition();
-            this.notify("position");
-            return true;
-        });
+            throw new Error("Gstreamer couldn't get initialized! abort!!");
     }
 
     vfunc_dispose(): void {
-        this.#gstBus.remove_watch();
-        this.#playbin.set_state(Gst.State.NULL);
-        this.#playbin.run_dispose();
+        this.#pipeline?.set_state(Gst.State.NULL);
+        this.#scope.dispose();
     }
 
     public static getDefault(): Media {
@@ -141,7 +125,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(!this.#song || this.#status !== PlaybackStatus.PAUSED)
             return;
 
-        this.#playbin.set_state(Gst.State.PLAYING);
+        this.#pipeline?.set_state(Gst.State.PLAYING);
         this.#status = PlaybackStatus.PLAYING;
         this.notify("status");
         this.emit("resumed", this.#song);
@@ -151,7 +135,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(this.#status !== PlaybackStatus.PLAYING)
             return;
 
-        this.#playbin.set_state(Gst.State.PAUSED);
+        this.#pipeline?.set_state(Gst.State.PAUSED);
         this.#status = PlaybackStatus.PAUSED;
         this.emit("paused", this.#song!);
         this.notify("status");
@@ -215,9 +199,50 @@ export default class Media extends GObject.Object implements VibeMedia {
         }
     }
 
+    private addPipelineWatch(): void {
+        if(!this.#pipeline)
+            throw new Error("Media: Couldn't get any pipeline to watch data");
 
-    /** @private song play implementation, overwrites current song and ignores queue
-      * this method only plays the song using gst playbin and nothing more. 
+        const bus = this.#pipeline.get_bus();
+
+        bus.add_watch(GLib.PRIORITY_DEFAULT, (_, msg) => {
+            switch(msg.type) {
+                case Gst.MessageType.EOS:
+                    this.#song = null;
+                    this.notify("song");
+
+                    break;
+            }
+
+            if(this.loop !== LoopMode.NONE) {
+                this.next();
+
+                return false;
+            }
+
+            return true;
+        });
+    }
+
+    public addPositionCheckIntervals(): void {
+        if(this.#intervals.length > 0) 
+            this.#intervals.splice(0, this.#intervals.length).forEach(interv => interv.destroy());
+
+        this.#intervals.push(
+            setInterval(() => {
+                if(!this.#song || this.#status !== PlaybackStatus.PLAYING) 
+                    return;
+
+                this.#position = this.#pipeline.query_position(Gst.Format.TIME)[1] / Gst.SECOND;
+                this.notify("position");
+                this.#length = this.#pipeline.query_duration(Gst.Format.TIME)[1] / Gst.SECOND;
+                this.notify("length");
+            }, 1000)
+        );
+    }
+
+    /** @private song play implementation, overwrites current song and ignores queue.
+      * this method only plays the song using a gstreamer pipeline and nothing more. 
       *
       * @throws {@link Gst.CoreError}
       * @returns true on success, or else false */
@@ -232,17 +257,25 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         this.#song = song;
         this.notify("song");
 
-        this.#playbin.set_state(Gst.State.NULL);
-        this.#playbin.set_property("uri", `file://${song.source.peek_path()!}`);
-        this.#playbin.seek_simple(null, Gst.SeekFlags.FLUSH, pos);
+        this.#pipeline?.set_state(Gst.State.NULL);
+        this.#pipeline?.get_bus().remove_signal_watch()
+        this.#pipeline = Gst.Pipeline.new("main-pipeline");
 
-        this.position = pos;
+        const playbin = Gst.ElementFactory.make("playbin3", "player")!;
+
+        this.#pipeline.add(playbin);
+        playbin.set_property("video-sink", null);
+        playbin.set_property("uri", `file://${song.source.peek_path()!}`);
+    
+        this.#pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, pos);
+        this.addPipelineWatch();
+        this.addPositionCheckIntervals();
+        this.#pipeline.set_state(initialState);
+
+        this.#position = pos;
         this.notify("position");
-        this.#length = this.#playbin.query_duration(Gst.Format.PERCENT)[1];
+        this.#length = this.#pipeline.query_duration(Gst.Format.TIME)[1] / Gst.SECOND;
         this.notify("length");
-
-        this.#playbin.set_state(initialState);
-
         this.#status = this.stateToPlaybackStatus(initialState);
         this.notify("status");
 
@@ -263,7 +296,7 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
 
     /** @returns the playbin3 position in nanoseconds */
     private getPosition(): number {
-        return this.#playbin.query_position(Gst.Format.TIME)[1];
+        return this.#pipeline!.query_position(Gst.Format.TIME)[1];
     }
 
     emit<S extends keyof MediaSignalSignatures>(

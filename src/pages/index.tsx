@@ -1,5 +1,5 @@
 import Gtk from "gi://Gtk?version=4.0";
-import GObject, { getter, gtype, register, signal } from "gnim/gobject";
+import GObject, { getter, gtype, property, register, signal } from "gnim/gobject";
 import { Page, PagesSignalSignatures, Pages as VibePages } from "libvibe/interfaces";
 import { omitObjectKeys } from "../modules/util";
 
@@ -8,14 +8,24 @@ import { omitObjectKeys } from "../modules/util";
 export class Pages extends Gtk.Stack implements VibePages {
     declare $signals: PagesSignalSignatures;
 
+    #statics: Array<Page> = [];
     #history: Array<Page> = [];
-    #page: Page;
+    #page: Page|null = null;
 
     @getter(gtype<Page>(GObject.Object))
-    get currentPage() { return this.#page; }
+    get currentPage() { return this.#page!; }
 
     @getter(Array)
     get history() { return this.#history; }
+
+    @getter(Boolean)
+    get canGoBack() { return this.#history.length > 0 ? true : Boolean(this.lastStaticPage); }
+
+    @getter(Array)
+    get staticPages() { return this.#statics; }
+
+    @property(gtype<Page|null>(GObject.Object))
+    lastStaticPage: Page|null = null;
 
     @signal(gtype<Page>(GObject.Object))
     added(page: Page) {
@@ -23,37 +33,45 @@ export class Pages extends Gtk.Stack implements VibePages {
 
         this.add_named(page, name);
         this.set_visible_child_full(name, Gtk.StackTransitionType.SLIDE_LEFT);
+        this.notify("can-go-back");
     }
 
     @signal(gtype<Page>(GObject.Object))
     removed(rmPage: Page) {
         const name = String(rmPage.id);
 
-        this.set_visible_child_name(
-            String(this.#history[this.#history.length - 1].id));
+        this.set_visible_child_full(
+            String(this.currentPage.id),
+            Gtk.StackTransitionType.SLIDE_LEFT_RIGHT
+        );
 
-        setTimeout(() => {
-            this.remove(this.get_child_by_name(name)!)
-        }, this.transitionDuration);
+        if(!this.#statics.filter(sp => sp.id === name)[0])
+            setTimeout(() => {
+                this.remove(this.get_child_by_name(name)!)
+            }, this.transitionDuration);
+        this.notify("can-go-back");
     }
 
-
     constructor(props: {
-        initialPage: Page
+        initialStaticPage?: Page
     } & Partial<Gtk.Stack.ConstructorProps>) {
-        super(omitObjectKeys(props, [ "initialPage" ]));
+        super(omitObjectKeys(props, [ "initialStaticPage" ]));
 
-        this.#page = props.initialPage;
+        props.initialStaticPage &&
+            this.addStatic(props.initialStaticPage);
     }
 
     public addPage(page: Page): void {
-        for(let i = 0; i < this.#history.length; i++) {
+        const previousPage: Page|null = this.currentPage ?? this.lastStaticPage;
+
+        if(previousPage?.id === page.id)
+            return;
+
+        for(let i = this.#history.length; i > 0; i--) {
             const p = this.#history[i];
 
-            if(p.id === page.id && i < this.#history.length) {
-                this.#history.splice(i+1, this.#history.length - i).forEach(p =>
-                    this.emit("removed", p)
-                );
+            if(p.id === page.id && i > 0) {
+                this.#history.splice(0, i-1).forEach(p => this.emit("removed", p));
                 this.notify("history");
                 this.#page = page;
                 this.notify("current-page");
@@ -61,25 +79,54 @@ export class Pages extends Gtk.Stack implements VibePages {
             }
         }
 
-        this.#history.push(page);
-        this.notify("history");
         this.#page = page;
         this.notify("current-page");
         this.emit("added", page);
+
+        if(previousPage && !this.#statics.filter(sp => sp.id === previousPage.id)[0]) {
+            this.#history.unshift(previousPage);
+            this.notify("history");
+        }
     }
 
-    back(numOfPages?: number): void {
-        if(this.#history.length <= 1 || (numOfPages && numOfPages < 1)) 
+    /** add a static page(root page) to the stack. 
+      * this can be used for pages like home, library, etc. */
+    public addStatic(page: Page, name?: string) {
+        this.add_named(page, name ?? String(page.id));
+        this.#statics.push(page);
+        if(!this.#page) {
+            this.#page = page;
+            this.notify("current-page");
+        }
+
+        this.notify("static-pages");
+    }
+
+    back(numOfPages: number = 1): void {
+        if(this.#history.length < 1 || numOfPages < 1 || numOfPages === 0) 
             return;
 
-        let targetIndex: number = this.#history.length - 2;
+        // return to the last static page
+        if(this.#history.length === 0 && this.currentPage && this.lastStaticPage) {
+            const previousPage = this.currentPage;
 
-        if(numOfPages && numOfPages < this.#history.length) 
-            targetIndex = this.#history.length - numOfPages;
+            this.#page = this.lastStaticPage;
+            this.notify("current-page");
+            this.emit("removed", previousPage);
+            this.notify("can-go-back");
 
-        this.#page = this.#history[targetIndex];
+            return;
+        }
+
+        const targetIndex: number = numOfPages - 1;
+        const targetPage = this.#history[targetIndex];
+
+        if(!targetPage)
+            return;
+
+        this.#page = targetPage;
         this.notify("current-page");
-        this.#history.splice(targetIndex, this.#history.length - targetIndex).forEach(p =>
+        this.#history.splice(0, targetIndex).forEach(p =>
             this.emit("removed", p)
         );
     }

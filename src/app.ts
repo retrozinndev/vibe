@@ -80,7 +80,7 @@ export class App extends Adw.Application {
     constructor() {
         super({
             version: VIBE_VERSION,
-            applicationId: "io.github.retrozinndev.vibe",
+            applicationId: "io.github.retrozinndev.Vibe",
             flags: Gio.ApplicationFlags.DEFAULT_FLAGS 
         });
 

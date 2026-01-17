@@ -63,7 +63,9 @@ export default () =>
                         }
                     </With>
                 </Gtk.Box>
-                <Gtk.Box $type="center" halign={Gtk.Align.CENTER} orientation={Gtk.Orientation.VERTICAL}>
+                <Gtk.Box $type="center" halign={Gtk.Align.CENTER} orientation={Gtk.Orientation.HORIZONTAL}
+                  spacing={6}>
+
                     <Gtk.Box class={"controls"} spacing={6}>
                         <Gtk.Button class={"shuffle flat"} iconName={createBinding(Media.getDefault(), "shuffle")
                           .as(shuffle => shuffle === ShuffleMode.SHUFFLE ?
@@ -129,25 +131,38 @@ export default () =>
                               Media.getDefault().loop = LoopMode.NONE;
                           }}
                         />
-
-                        <Gtk.Scale visible={false} class={"slider"} drawValue={false} $={(self) => {
-                            self.set_value(0);
-                            self.set_range(0, 1);
-
-                            const connections = [
-                                Media.getDefault().connect("notify::position", (media) => {
-                                    console.log(media.position);
-                                    self.set_value(media.position);
-                                }),
-                                Media.getDefault().connect("notify::length", (media) => {
-                                    console.log(media.length);
-                                    self.set_range(0, media.length);
-                                })
-                            ];
-
-                            getScope().onCleanup(() => connections.forEach(id => Media.getDefault().disconnect(id)));
-                        }} />
                     </Gtk.Box>
+                    <Gtk.Scale class={"slider"} drawValue={false} widthRequest={250}
+                      $={(self) => {
+                          self.set_value(0);
+                          self.set_range(0, 1);
+
+                          let ignoreChange: boolean = false;
+                          const mediaConnections = [
+                              Media.getDefault().connect("notify::position", (media) => {
+                                  ignoreChange = true;
+                                  self.set_value(media.position);
+                              }),
+                              Media.getDefault().connect("notify::length", (media) => {
+                                  self.set_range(0, media.length);
+                              })
+                          ];
+
+                          const id = self.connect("value-changed", (self) => {
+                              if(ignoreChange) {
+                                  ignoreChange = false;
+                                  return;
+                              }
+
+                              Media.getDefault().position = self.get_value();
+                          });
+
+                          getScope().onCleanup(() => {
+                              mediaConnections.forEach(id => Media.getDefault().disconnect(id))
+                              self.disconnect(id);
+                          });
+                      }}
+                    />
                 </Gtk.Box>
                 <Gtk.Box $type="end" />
             </Gtk.CenterBox>

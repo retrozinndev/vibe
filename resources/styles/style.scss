@@ -2,15 +2,6 @@ window .container {
   background: var(--window-bg-color);
 }
 
-flowboxchild:hover,
-flowboxchild:focus,
-flowboxchild:focus-visible,
-list > row:hover,
-list > row:focus,
-list > row:focus-visible {
-  background: none;
-}
-
 .navigation-tab-button {
   $padding-block: 7px;
 
@@ -33,27 +24,34 @@ list > row:focus-visible {
   & .controls button {
     margin: 12px 0;
   }
+
+  & scale {
+    & trough {
+      min-height: 4px;
+    }
+
+    & slider {
+      min-width: 6px;
+      min-height: 6px;
+    }
+  }
 }
 
-$card-radius: 18px;
 card {
   padding: 12px;
-  border-radius: $card-radius;
   transition: 120ms linear;
   min-width: 106px;
   min-height: 160px;
-  background: var(--card-bg-color);
 
   & picture {
     border-radius: 10px;
+    margin-bottom: 6px;
   }
 }
 
 smallcard {
   padding: 10px;
-  border-radius: 12px;
   min-height: 18px;
-  background: var(--card-bg-color);
 
   & image.art {
     margin-right: 6px;
@@ -92,8 +90,10 @@ page {
         padding: $padding;
         border-radius: $radius;
 
-        & card {
-          border-radius: calc($radius - $padding);
+        &:hover,
+        &:focus-visible,
+        &:active {
+          background: none;
         }
       }
     }
