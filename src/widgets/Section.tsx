@@ -16,7 +16,6 @@ import Media from "../modules/media";
 import { omitObjectKeys } from "../modules/util";
 import Card from "./Card";
 import SmallCard from "./SmallCard";
-import { PageModal } from "libvibe/interfaces";
 import { toBoolean } from "gnim-utils";
 
 
@@ -131,7 +130,6 @@ export default class Section extends Gtk.Box {
                                   iconName: "media-playback-start-symbolic",
                                   onClicked: () => {
                                       Vibe.getDefault().addPage({
-                                          modal: PageModal.ARTIST,
                                           content: item,
                                           title: item.displayName ?? item.name ?? "Unnamed Artist"
                                       });
@@ -158,14 +156,12 @@ export default class Section extends Gtk.Box {
                           if(item instanceof Song)
                               return Card.new_for_song(item, undefined, () => {
                                   Vibe.getDefault().addPage({
-                                      modal: PageModal.SONG,
                                       content: item,
                                       title: item.title ?? "Untitled Song",
                                       buttons: item.artist.map(artist => ({
                                           label: `Go to ${artist.displayName ?? artist.name}`,
                                           iconName: "person-symbolic",
                                           onClicked: () => Vibe.getDefault().addPage({
-                                              modal: PageModal.ARTIST,
                                               content: artist,
                                               title: artist.displayName ?? artist.name
                                           })
@@ -175,7 +171,6 @@ export default class Section extends Gtk.Box {
 
                           if(item instanceof Artist)
                               return Card.new_for_artist(item, undefined, () => Vibe.getDefault().addPage({
-                                  modal: PageModal.ARTIST,
                                   content: item,
                                   title: item.displayName ?? item.name
                               }));

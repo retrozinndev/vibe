@@ -1,4 +1,3 @@
-import { PageModal } from "libvibe/interfaces";
 import { Page } from "../widgets/Page";
 import Tab from "../widgets/Tab";
 import { createBinding, createRoot } from "gnim";
@@ -12,14 +11,21 @@ import Section from "../widgets/Section";
 
 
 @register({ GTypeName: "VibeSearchPage" })
-export class SearchPage extends Page<PageModal.CUSTOM> {
+export class SearchPage extends Page {
 
     constructor(tab: Tab) {
         super({
-            modal: PageModal.CUSTOM,
             title: "Search anything",
             id: "search",
-            tab
+            tab,
+            content: <Gtk.Box class={"page-search"} orientation={Gtk.Orientation.VERTICAL} hexpand>
+                <Gtk.SearchEntry class={"search-entry"} searchDelay={300} 
+                  placeholderText={`Search on ${PluginHandler.getDefault().plugin.prettyName}...`}
+                  widthRequest={600} halign={Gtk.Align.CENTER}
+                  onSearchChanged={(self) => onSearchChanged(self)}
+                />
+                <Gtk.ListBox class={"results"} selectionMode={Gtk.SelectionMode.NONE} />
+            </Gtk.Box> as Gtk.Box
         });
 
         createSubscription(
@@ -81,19 +87,6 @@ export class SearchPage extends Page<PageModal.CUSTOM> {
             listbox.remove_all();
             results.forEach(item => listbox.insert(buildResultWidget(item), -1));
         }
-
-        this.get_content_widget().append(
-            <Gtk.Box class={"page-search"} orientation={Gtk.Orientation.VERTICAL} hexpand>
-
-                <Gtk.SearchEntry class={"search-entry"} searchDelay={300} 
-                  placeholderText={`Search on ${PluginHandler.getDefault().plugin.prettyName}...`}
-                  widthRequest={600} halign={Gtk.Align.CENTER}
-                  onSearchChanged={(self) => onSearchChanged(self)}
-                />
-
-                <Gtk.ListBox class={"results"} selectionMode={Gtk.SelectionMode.NONE} />
-            </Gtk.Box> as Gtk.Box
-        );
     }
 
 }

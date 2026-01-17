@@ -10,10 +10,10 @@ export class Pages extends Gtk.Stack implements VibePages {
 
     #statics: Array<Page> = [];
     #history: Array<Page> = [];
-    #page: Page|null = null;
+    #currentPage: Page|null = null;
 
     @getter(gtype<Page>(GObject.Object))
-    get currentPage() { return this.#page!; }
+    get currentPage() { return this.#currentPage!; }
 
     @getter(Array)
     get history() { return this.#history; }
@@ -21,14 +21,16 @@ export class Pages extends Gtk.Stack implements VibePages {
     @getter(Boolean)
     get canGoBack() { return this.#history.length > 0 ? true : Boolean(this.lastStaticPage); }
 
+    // internal properties
     @getter(Array)
     get staticPages() { return this.#statics; }
 
     @property(gtype<Page|null>(GObject.Object))
     lastStaticPage: Page|null = null;
+    // -----
 
     @signal(gtype<Page>(GObject.Object))
-    added(page: Page) {
+    protected added(page: Page) {
         const name = String(page.id);
 
         this.add_named(page, name);
@@ -37,7 +39,7 @@ export class Pages extends Gtk.Stack implements VibePages {
     }
 
     @signal(gtype<Page>(GObject.Object))
-    removed(rmPage: Page) {
+    protected removed(rmPage: Page) {
         const name = String(rmPage.id);
 
         this.set_visible_child_full(
@@ -61,7 +63,7 @@ export class Pages extends Gtk.Stack implements VibePages {
             this.addStatic(props.initialStaticPage);
     }
 
-    public addPage(page: Page): void {
+    public add(page: Page): void {
         const previousPage: Page|null = this.currentPage ?? this.lastStaticPage;
 
         if(previousPage?.id === page.id)
@@ -73,13 +75,13 @@ export class Pages extends Gtk.Stack implements VibePages {
             if(p.id === page.id && i > 0) {
                 this.#history.splice(0, i-1).forEach(p => this.emit("removed", p));
                 this.notify("history");
-                this.#page = page;
+                this.#currentPage = page;
                 this.notify("current-page");
                 return;
             }
         }
 
-        this.#page = page;
+        this.#currentPage = page;
         this.notify("current-page");
         this.emit("added", page);
 
@@ -94,8 +96,8 @@ export class Pages extends Gtk.Stack implements VibePages {
     public addStatic(page: Page, name?: string) {
         this.add_named(page, name ?? String(page.id));
         this.#statics.push(page);
-        if(!this.#page) {
-            this.#page = page;
+        if(!this.#currentPage) {
+            this.#currentPage = page;
             this.notify("current-page");
         }
 
@@ -110,7 +112,7 @@ export class Pages extends Gtk.Stack implements VibePages {
         if(this.#history.length === 0 && this.currentPage && this.lastStaticPage) {
             const previousPage = this.currentPage;
 
-            this.#page = this.lastStaticPage;
+            this.#currentPage = this.lastStaticPage;
             this.notify("current-page");
             this.emit("removed", previousPage);
             this.notify("can-go-back");
@@ -124,7 +126,7 @@ export class Pages extends Gtk.Stack implements VibePages {
         if(!targetPage)
             return;
 
-        this.#page = targetPage;
+        this.#currentPage = targetPage;
         this.notify("current-page");
         this.#history.splice(0, targetIndex).forEach(p =>
             this.emit("removed", p)

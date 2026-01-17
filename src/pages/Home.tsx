@@ -2,7 +2,6 @@ import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, createState, With } from "gnim";
 import { Section as SectionType } from "libvibe";
-import { PageModal } from "libvibe/interfaces";
 import { Plugin } from "libvibe/plugin";
 import PluginHandler from "../plugins/plugin-handler";
 import { Page } from "../widgets/Page";
@@ -15,15 +14,10 @@ import Tab from "../widgets/Tab";
 export class Home extends Page {
     constructor(tab: Tab) {
         super({
-            modal: PageModal.CUSTOM,
             id: "home",
             title: "Recommendations",
-            tab
-        });
-
-        this.get_content_widget().set_spacing(16);
-        this.get_content_widget().append(
-            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+            tab,
+            content: <Gtk.Box orientation={Gtk.Orientation.VERTICAL} spacing={16}>
                 <With value={createBinding(PluginHandler.getDefault(), "plugin")}>
                     {(plugin: Plugin) => {
                         const [finished, setFinished] = createState(false);
@@ -64,6 +58,6 @@ export class Home extends Page {
                     }}
                 </With>
             </Gtk.Box> as Gtk.Box
-        );
+        });
     }
 }
