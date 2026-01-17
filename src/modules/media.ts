@@ -258,13 +258,13 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         this.notify("song");
 
         this.#pipeline?.set_state(Gst.State.NULL);
-        this.#pipeline?.get_bus().remove_signal_watch()
+        this.#pipeline?.get_bus().remove_watch();
         this.#pipeline = Gst.Pipeline.new("main-pipeline");
 
         const playbin = Gst.ElementFactory.make("playbin3", "player")!;
 
         this.#pipeline.add(playbin);
-        playbin.set_property("video-sink", null);
+        playbin.set_property("video-sink", Gst.ElementFactory.make("fakevideosink", "fakesink")); // ignore video stream
         playbin.set_property("uri", `file://${song.source.peek_path()!}`);
     
         this.#pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, pos);
