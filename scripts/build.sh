@@ -64,7 +64,7 @@ $esbuild --bundle ./src/app.ts \
 
 # -> Sass (stylesheet)
 echo "[info] compiling sass in \`./build/resources/style.css\`"
-sass --no-source-map -I ./resources/styles resources/styles/style.scss ./build/resources/style.css
+sass --no-source-map -I ./data/styles data/styles/style.scss ./build/resources/style.css
 
 # -> GResource
 echo "[info] compiling gresource"

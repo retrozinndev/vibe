@@ -21,11 +21,13 @@ window .container {
     border-radius: 8px;
   }
 
-  & .controls button {
-    margin: 12px 0;
+  & .controls button.pill {
+    padding: 4px 24px;
   }
 
   & scale {
+    min-height: 0px;
+
     & trough {
       min-height: 4px;
     }
