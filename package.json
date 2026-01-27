@@ -36,6 +36,6 @@
     "gnim": "^1.9.0",
     "gnim-utils": "github:retrozinndev/gnim-utils",
     "libvibe": "github:retrozinndev/libvibe",
-    "sass": "^1.97.2"
+    "sass": "^1.97.3"
   }
 }
