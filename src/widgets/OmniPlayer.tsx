@@ -54,7 +54,7 @@ export default () =>
                             <Gtk.Label class="title-4" label={createBinding(song, "title").as(s => s ?? "No Title")} 
                               xalign={0} ellipsize={Pango.EllipsizeMode.END} />
 
-                            <Gtk.Label class="caption" xalign={0} label={createBinding(song, "artist").as(artists => {
+                            <Gtk.Label class="caption dimmed" xalign={0} label={createBinding(song, "artist").as(artists => {
                                   if(!artists || artists.length < 1) 
                                       return "Unknown Artist";
 
@@ -168,6 +168,54 @@ export default () =>
                   }}
                 />
             </Gtk.Box>
-            <Gtk.Box $type="end" hexpand={false} />
+            <Gtk.Box $type="end" hexpand={false} halign={Gtk.Align.END}>
+                <Gtk.Box class={"volume-slider"} spacing={2}>
+                    <Gtk.Button class={"circular flat"} valign={Gtk.Align.CENTER}
+                      iconName={createComputed(() => [
+                          createBinding(Media.getDefault(), "volume")(vol =>
+                              vol >= 80 ?
+                                  "audio-volume-high-symbolic"
+                              : vol >= 45 ?
+                                  "audio-volume-medium-symbolic"
+                              : vol > 0 ?
+                                  "audio-volume-low-symbolic"
+                              : "audio-volume-muted-symbolic"
+                          )(),
+                          createBinding(Media.getDefault(), "mute")()
+                      ])((params) => {
+                          const [volumeIcon, muted] = params as [string, boolean];
+
+                          return !muted ? volumeIcon : "audio-volume-muted-symbolic"
+                      })}
+                      onClicked={() => Media.getDefault().mute = !Media.getDefault().mute}
+                    />
+                    <Gtk.Scale drawValue={false} hexpand widthRequest={120}
+                      $={(self) => {
+                          self.set_range(0, 100);
+                          self.set_value(Media.getDefault().volume);
+
+                          let ignoreChange: boolean = false;
+                          const mediaId = Media.getDefault().connect("notify::volume", (media) => {
+                              ignoreChange = true;
+                              self.set_value(media.volume);
+                          });
+
+                          const id = self.connect("value-changed", (self) => {
+                              if(ignoreChange) {
+                                  ignoreChange = false;
+                                  return;
+                              }
+
+                              Media.getDefault().volume = self.get_value();
+                          });
+
+                          getScope().onCleanup(() => {
+                              Media.getDefault().disconnect(mediaId);
+                              self.disconnect(id);
+                          });
+                      }}
+                    />
+                </Gtk.Box>
+            </Gtk.Box>
         </Gtk.CenterBox>
     </Adw.Clamp> as Gtk.Widget;

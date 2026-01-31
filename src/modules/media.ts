@@ -19,8 +19,10 @@ export default class Media extends GObject.Object implements VibeMedia {
     #position: number = 0;
     #queue: Queue = new Queue();
     #status: PlaybackStatus = PlaybackStatus.STOPPED;
+    #mute: boolean = false;
     #intervals: Array<GLib.Source> = [];
     #song: Song|null = null;
+    #volume: number = 100;
     
     /** the active song, can be null */
     @getter(gtype<Song|null>(Song)) 
@@ -35,6 +37,17 @@ export default class Media extends GObject.Object implements VibeMedia {
     @getter(Number)
     get length() { return this.#length; }
 
+    @getter(Boolean)
+    get mute() { return this.#mute; }
+
+    @setter(Boolean)
+    set mute(newValue: boolean) {
+        this.#mute = newValue;
+        this.notify("mute");
+
+        this.#pipeline?.get_by_name("player")?.set_property("mute", newValue);
+    }
+
     @getter(Number)
     get position() { return this.#position; }
 
@@ -44,6 +57,19 @@ export default class Media extends GObject.Object implements VibeMedia {
             return;
 
         this.#pipeline?.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, newPos * Gst.SECOND);
+    }
+
+    @getter(Number)
+    get volume() { return this.#volume; }
+
+    @setter(Number)
+    set volume(newValue: number) {
+        this.#volume = newValue;
+        this.notify("volume");
+        this.#pipeline?.get_by_name("player")?.set_property(
+            "volume",
+            newValue > 1 ? newValue / 100 : newValue
+        );
     }
 
     @property(gtype<LoopMode>(Number))
@@ -69,10 +95,7 @@ export default class Media extends GObject.Object implements VibeMedia {
 
     constructor() {
         super();
-
         Gst.init([]);
-        if(!Gst.is_initialized())
-            throw new Error("Gstreamer couldn't get initialized! abort!!");
     }
 
     vfunc_dispose(): void {
@@ -265,6 +288,8 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
 
         this.#pipeline.add(playbin);
         playbin.set_property("video-sink", Gst.ElementFactory.make("fakevideosink", "fakesink")); // ignore video stream
+        playbin.set_property("volume", this.#volume / 100);
+        playbin.set_property("mute", this.#mute);
         playbin.set_property("uri", `file://${song.source.peek_path()!}`);
     
         this.#pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, pos);
