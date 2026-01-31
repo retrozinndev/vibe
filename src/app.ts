@@ -12,6 +12,7 @@ import { programArgs, programInvocationName } from "system";
 import { getPages, getToastOverlay, createMainWindow, start } from "./Window";
 import Media from "./modules/media";
 import { Page } from "./widgets/Page";
+import { Dialog } from "./widgets/Dialog";
 
 
 @register({ GTypeName: "VibeApp" })
@@ -126,6 +127,8 @@ export class App extends Adw.Application {
 
         const vibe = new Vibe();
         this.#mainWindow = createMainWindow(this);
+        vibe.setApplicationWindow(this.#mainWindow);
+        vibe.setDialogConstructor(Dialog);
         start(this.#mainWindow);
 
         // init libvibe
@@ -133,8 +136,7 @@ export class App extends Adw.Application {
             Media.getDefault(),
             getPages(),
             Page as never, // typescript ahh
-            getToastOverlay(),
-            this.get_main_window()
+            getToastOverlay()
         );
 
         // init plugins
