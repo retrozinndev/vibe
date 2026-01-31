@@ -133,7 +133,8 @@ export class App extends Adw.Application {
             Media.getDefault(),
             getPages(),
             Page as never, // typescript ahh
-            getToastOverlay()
+            getToastOverlay(),
+            this.get_main_window()
         );
 
         // init plugins
