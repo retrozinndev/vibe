@@ -9,19 +9,17 @@ import { PluginLocal } from "./builtin/local";
 import { exportToGlobal } from "./exports";
 
 
-// external and builtin plugins don't have constructor params, that's what PluginConstructor is for
-type PluginConstructor = new () => Plugin;
-
 @register({ GTypeName: "VibePluginHandler" })
 export default class PluginHandler extends GObject.Object {
 
     private static instance: PluginHandler;
-    #builtinPlugins: Array<PluginConstructor> = [
-        PluginLocal
-    ];
 
     #builtins: Array<Plugin> = [];
     #plugins: Array<Plugin> = [];
+    #builtinPlugins: Array<PluginHandler.PluginConstructor> = [
+        PluginLocal
+    ];
+
     
     @getter(Array<Plugin>)
     get plugins() { return this.#plugins; }
@@ -63,7 +61,7 @@ export default class PluginHandler extends GObject.Object {
                     if(!/\.js$/.test(item.get_name()))
                         continue;
 
-                    this.importPlugin(`${Vibe.pluginsDir.peek_path()!}/${item.get_name()}`).catch(e => {
+                    this.importExternal(`${Vibe.pluginsDir.peek_path()!}/${item.get_name()}`).catch(e => {
                         Adw.MessageDialog.new(null, 
                             "Couldn't auto-import plugin", 
                             `An error occurred while importing the plugin "${item.get_name()}": ${e}`
@@ -76,7 +74,7 @@ export default class PluginHandler extends GObject.Object {
         this.plugin = this.#plugins[0]; // TODO: save last-used plugin and load it here
     }
 
-    async importPlugin(file: string|Gio.File): Promise<Plugin> {
+    async importExternal(file: string|Gio.File): Promise<Plugin> {
         file = typeof file === "string" ?
             Gio.File.new_for_path(file)
         : file;
@@ -84,35 +82,55 @@ export default class PluginHandler extends GObject.Object {
         if(!file.query_exists(null))
             throw new Error("Provided file does not exist")
 
-        const pluginFile = Gio.File.new_for_path(`${Vibe.pluginsDir.peek_path()!}/${file.get_basename()!}`);
-        file.copy(pluginFile, Gio.FileCopyFlags.OVERWRITE, null, null); // TODO: implement progress bar; do this asynchronously
+        const pluginFile = Gio.File.new_for_path(`${Vibe.pluginsDir.peek_path()!}/${file.get_basename()}`);
 
-        const module: {
-            default: PluginConstructor;
-            VibePlugin: PluginConstructor;
-        } = (await import(pluginFile.get_path()!));
+        // copy plugin file if not already on plugins dir
+        if(file.peek_path()! !== pluginFile.peek_path()!) 
+            file.copy(pluginFile, Gio.FileCopyFlags.OVERWRITE, null, null);
 
-        const Plugin = module.default ?? module.VibePlugin;
+        return new Promise((resolve, reject) => {
+            import(`file://${pluginFile.peek_path()}`).then((mod: PluginHandler.Module) => {
+                const ExtPluginClass = mod.VibePlugin ?? mod.default;
+                
+                if(typeof ExtPluginClass === "function") {
+                    try {
+                        const plugin = new ExtPluginClass();
 
-        if(!Plugin) {
-            const error = "Could not import plugin: class `VibePlugin`(or `_VibePlugin`) not found / not exported";
-            Adw.MessageDialog.new(null, "An error occurred", error);
+                        console.log("Imported plugin: " + plugin.prettyName + "!");
+                        plugin.status = "init";
+                        this.#plugins.push(plugin);
+                        this.notify("plugins");
 
-            throw new Error(error);
-        }
+                        plugin.status = "ok";
 
-        const instance = new Plugin();
+                        resolve(plugin);
+                        return;
+                    } catch(e) {
+                        reject(new Error(`Failed to create instance for plugin module ${pluginFile.get_basename()
+                            }: ${(e as Error).message}`)
+                        );
+                        return;
+                    }
+                }
 
-        console.log("imported plugin: " + instance.name + "!");
-        instance.status = "init";
-        this.#plugins.push(instance);
-        this.notify("plugins");
-        instance.status = "ok";
-
-        return instance;
+                reject(new Error(`Failed to find a plugin implementation in js module: ${pluginFile.get_basename()
+                    }. "VibePlugin" or "default" constructor could not be found`));
+                return;
+            });
+        });
     }
 
-    async importBultin(plugin: PluginConstructor): Promise<void> {
+    async importModule(file: Gio.File): Promise<any> {
+        try {
+            return await import(`file://${file.peek_path()}`);
+        } catch(e) {
+            console.error(e);
+        }
+
+        return null;
+    }
+
+    async importBultin(plugin: PluginHandler.PluginConstructor): Promise<void> {
         const pl = new plugin();
         pl.status = "init";
         this.#builtins.push(pl);
@@ -132,3 +150,13 @@ export default class PluginHandler extends GObject.Object {
         return this.instance;
     }
 }
+
+export namespace PluginHandler {
+    /** plugins don't have constructor params, so we need a new type */
+    export type PluginConstructor = new () => Plugin;
+    export type Module = {
+        default?: PluginHandler.PluginConstructor;
+        VibePlugin?: PluginHandler.PluginConstructor;
+    };
+}
+
