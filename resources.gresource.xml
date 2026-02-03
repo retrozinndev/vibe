@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <gresources>
-    <gresource prefix="/io/github/retrozinndev/vibe/icons">
-        <file alias="library-symbolic.svg">data/icons/library-symbolic.svg</file>
-        <file alias="test-pass-symbolic.svg">data/icons/test-pass-symbolic.svg</file>
-        <file alias="person-symbolic.svg">data/icons/person-symbolic.svg</file>
-        <file alias="people-symbolic.svg">data/icons/people-symbolic.svg</file>
-        <file alias="playlist-consecutive-symbolic.svg">data/icons/playlist-consecutive-symbolic.svg</file>
-        <file alias="playlist-shuffle-symbolic.svg">data/icons/playlist-shuffle-symbolic.svg</file>
-        <file alias="plus-circle-outline-symbolic.svg">data/icons/plus-circle-outline-symbolic.svg</file>
-        <file alias="folder-music-symbolic.svg">data/icons/folder-music-symbolic.svg</file>
-        <file alias="media-playlist-repeat-song-symbolic.svg">data/icons/media-playlist-repeat-song-symbolic.svg</file>
-        <file alias="arrows-loop-tall-symbolic.svg">data/icons/arrows-loop-tall-symbolic.svg</file>
-        <file alias="arrows-loop-tall-disabled-symbolic.svg">data/icons/arrows-loop-tall-disabled-symbolic.svg</file>
+    <gresource prefix="/io/github/retrozinndev/vibe/icons/scalable/actions">
+        <file alias="library-symbolic.svg">data/icons/scalable/actions/library-symbolic.svg</file>
+        <file alias="test-pass-symbolic.svg">data/icons/scalable/actions/test-pass-symbolic.svg</file>
+        <file alias="person-symbolic.svg">data/icons/scalable/actions/person-symbolic.svg</file>
+        <file alias="people-symbolic.svg">data/icons/scalable/actions/people-symbolic.svg</file>
+        <file alias="playlist-consecutive-symbolic.svg">data/icons/scalable/actions/playlist-consecutive-symbolic.svg</file>
+        <file alias="playlist-shuffle-symbolic.svg">data/icons/scalable/actions/playlist-shuffle-symbolic.svg</file>
+        <file alias="plus-circle-outline-symbolic.svg">data/icons/scalable/actions/plus-circle-outline-symbolic.svg</file>
+        <file alias="folder-music-symbolic.svg">data/icons/scalable/actions/folder-music-symbolic.svg</file>
+        <file alias="media-playlist-repeat-song-symbolic.svg">data/icons/scalable/actions/media-playlist-repeat-song-symbolic.svg</file>
+        <file alias="arrows-loop-tall-symbolic.svg">data/icons/scalable/actions/arrows-loop-tall-symbolic.svg</file>
+        <file alias="arrows-loop-tall-disabled-symbolic.svg">data/icons/scalable/actions/arrows-loop-tall-disabled-symbolic.svg</file>
     </gresource>
     <gresource prefix="/io/github/retrozinndev/vibe/data">
         <file alias="license">LICENSE</file>
