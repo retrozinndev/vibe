@@ -21,14 +21,12 @@ export class Menu extends Gtk.Popover {
     @property(Boolean)
     closeOnSelect: boolean = true;
 
-    /** if the menu should wait for double click to activate a button.
-      * this can mess things up depending on the current `mode` */
-    @property(Boolean)
-    activateOnDoubleClick: boolean = false;
-
 
     constructor(props: Partial<Menu.ConstructorProps>) {
-        super(omitObjectKeys(props, ["buttons"]));
+        super({
+            autohide: false,
+            ...omitObjectKeys(props, ["buttons"])
+        });
 
         this.add_css_class("menu"); // for it to have the adwaita menu style
         
@@ -47,8 +45,8 @@ export class Menu extends Gtk.Popover {
             <Gtk.ListBox selectionMode={createBinding(this, "mode")(mode =>
                   mode === Menu.Mode.SELECT_MANY ?
                       Gtk.SelectionMode.MULTIPLE
-                  : Gtk.SelectionMode.NONE
-              )} activateOnSingleClick={createBinding(this, "activateOnDoubleClick")(v => !v)}
+                  : Gtk.SelectionMode.SINGLE
+              )} activateOnSingleClick
               onRowSelected={(listbox, row) => {
                   row?.activate(); // activate row on selection
                   if(this.mode !== Menu.Mode.NORMAL && row instanceof MenuItem) {
@@ -58,6 +56,11 @@ export class Menu extends Gtk.Popover {
                           selectedRow.selected = false;
 
                       row.selected = true;
+                  }
+
+                  if(this.mode === Menu.Mode.NORMAL) {
+                      // we need to unselect the menuitem, so it works on a single click next time
+                      listbox.unselect_all();
                   }
 
                   this.closeOnSelect &&
