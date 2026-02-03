@@ -2,7 +2,6 @@ import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import { Accessor, createBinding, createRoot } from "gnim";
 import { createScopedConnection, createSecureAccessorBinding } from "gnim-utils";
-import { App } from "./app";
 import Home from "./tabs/Home";
 import Library from "./tabs/Library";
 import Search from "./tabs/Search";
@@ -12,6 +11,8 @@ import Tab from "./widgets/Tab";
 import PluginSelector from "./widgets/PluginSelector";
 import { Page as PageWidget } from "./widgets/Page";
 import { Pages } from "./pages";
+import { Menu } from "./widgets/Menu";
+import AboutDialog from "./widgets/AboutDialog";
 
 
 let pages: Pages, toastOverlay: Adw.ToastOverlay;
@@ -56,32 +57,20 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                       class={"sidebar-container"}>
 
                         <Adw.HeaderBar class={"flat"}>
-                            <Gtk.MenuButton class={"more flat"} iconName={"open-menu-symbolic"}
-                              $type="start">
-
-                                <Gtk.Popover $type="popover" $={popover => {
-                                    popover.set_child(
-                                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                                            <Gtk.Button class={"flat"} label={"Settings"} />
-                                            <Gtk.Button class={"flat"} label={"About"} onClicked={(self) => {
-                                                const dialog = Adw.AboutDialog.new();
-                                                dialog.set_application_name("Vibe");
-                                                dialog.set_application_icon("folder-music-symbolic");
-                                                dialog.set_version(App.get_default().version);
-                                                dialog.set_license(App.get_default().license);
-                                                dialog.set_developer_name("retrozinndev");
-                                                dialog.set_developers(["João Dias"]);
-                                                dialog.set_website("https://github.com/retrozinndev/vibe");
-                                                dialog.present(self.root);
-
-                                                popover.popdown();
-                                            }} />
-                                        </Gtk.Box> as Gtk.Box
-                                    );
-                                }} />
-                            </Gtk.MenuButton>
+                            <PluginSelector $type="start" />
                             <Gtk.Label class="heading" label="Vibe" $type="title" />
-                            <PluginSelector $type="end" />
+                            <Gtk.MenuButton class={"more flat"} iconName={"open-menu-symbolic"}
+                              $type="end">
+
+                                <Menu $type="popover" buttons={[
+                                    {
+                                        label: "Settings"
+                                    }, {
+                                        label: "About",
+                                        onClicked: AboutDialog
+                                    }
+                                ]} />
+                            </Gtk.MenuButton>
                         </Adw.HeaderBar>
 
                         {tabs.map(tab => 
