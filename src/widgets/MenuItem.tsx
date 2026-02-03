@@ -16,7 +16,7 @@ export class MenuItem extends Gtk.ListBoxRow {
     iconName: string|null = null;
 
 
-    constructor(props: Partial<PluginSelectorListItem.ConstructorProps>) {
+    constructor(props: Partial<MenuItem.ConstructorProps>) {
         super(omitObjectKeys(props, [
             "selected",
             "label",
@@ -46,7 +46,7 @@ export class MenuItem extends Gtk.ListBoxRow {
     }
 }
 
-export namespace PluginSelectorListItem {
+export namespace MenuItem {
     export interface ConstructorProps extends Gtk.ListBoxRow.ConstructorProps {
         selected: boolean;
         label: string;
