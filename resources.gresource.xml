@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <gresources>
-    <gresource prefix="/io/github/retrozinndev/vibe/icons/scalable/actions">
+    <gresource prefix="/io/github/retrozinndev/Vibe/icons/scalable/actions">
         <file alias="library-symbolic.svg">data/icons/scalable/actions/library-symbolic.svg</file>
         <file alias="test-pass-symbolic.svg">data/icons/scalable/actions/test-pass-symbolic.svg</file>
         <file alias="person-symbolic.svg">data/icons/scalable/actions/person-symbolic.svg</file>
@@ -14,7 +14,7 @@
         <file alias="arrows-loop-tall-symbolic.svg">data/icons/scalable/actions/arrows-loop-tall-symbolic.svg</file>
         <file alias="arrows-loop-tall-disabled-symbolic.svg">data/icons/scalable/actions/arrows-loop-tall-disabled-symbolic.svg</file>
     </gresource>
-    <gresource prefix="/io/github/retrozinndev/vibe/data">
+    <gresource prefix="/io/github/retrozinndev/Vibe/data">
         <file alias="license">LICENSE</file>
         <file alias="mpris.xml">data/mpris-interface.xml</file>
         <file alias="style.css">build/resources/style.css</file>
