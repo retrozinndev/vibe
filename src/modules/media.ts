@@ -193,7 +193,7 @@ export default class Media extends GObject.Object implements VibeMedia {
 
     public previous(): void {
         // also making this behavior a configurable thing would be nice
-        if(this.#song && (this.#queue.songs.length < 2 || this.getPosition() >= (Gst.SECOND * 3))) {
+        if(this.#song && (this.#queue.songs.length < 2 || this.#position >= (Gst.SECOND * 3))) {
             this.position = 0;
             return;
         }
@@ -258,8 +258,13 @@ export default class Media extends GObject.Object implements VibeMedia {
 
                 this.#position = this.#pipeline.query_position(Gst.Format.TIME)[1] / Gst.SECOND;
                 this.notify("position");
-                this.#length = this.#pipeline.query_duration(Gst.Format.TIME)[1] / Gst.SECOND;
-                this.notify("length");
+
+                const newLength = this.#pipeline.query_duration(Gst.Format.TIME)[1] / Gst.SECOND;
+
+                if(newLength !== this.#length) {
+                    this.#length = newLength;
+                    this.notify("length");
+                }
             }, 1000)
         );
     }
@@ -317,24 +322,5 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         }
 
         return PlaybackStatus.PLAYING;
-    }
-
-    /** @returns the playbin3 position in nanoseconds */
-    private getPosition(): number {
-        return this.#pipeline!.query_position(Gst.Format.TIME)[1];
-    }
-
-    emit<S extends keyof MediaSignalSignatures>(
-        signal: S,
-        ...args: Parameters<MediaSignalSignatures[S]>
-    ): void {
-        super.emit(signal, ...args);
-    }
-
-    connect<S extends keyof MediaSignalSignatures>(
-        signal: S, 
-        callback: (self: typeof this, ...args: Parameters<MediaSignalSignatures[S]>) => ReturnType<MediaSignalSignatures[S]>
-    ): number {
-        return super.connect(signal, callback);
     }
 }

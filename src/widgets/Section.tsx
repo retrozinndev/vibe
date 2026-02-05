@@ -1,7 +1,7 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import Pango from "gi://Pango?version=1.0";
-import { Accessor, createBinding, For } from "gnim";
+import { createBinding, For } from "gnim";
 import { getter, gtype, property, register } from "gnim/gobject";
 import {
     IconButton,
@@ -12,11 +12,9 @@ import {
     Section as VibeSection
 } from "libvibe";
 import { Artist, Song, SongList } from "libvibe/objects";
-import Media from "../modules/media";
 import { omitObjectKeys } from "../modules/util";
-import Card from "./Card";
-import SmallCard from "./SmallCard";
 import { toBoolean } from "gnim-utils";
+import Card from "./Card";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -105,49 +103,7 @@ export default class Section extends Gtk.Box {
         );
 
         this.append(
-            this.#type === "listrow" ?
-                <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} minChildrenPerLine={2} selectionMode={Gtk.SelectionMode.NONE}
-                  hexpand>
-
-                    {this.#content.map(item => {
-                        if(item instanceof Song)
-                            return <Adw.Clamp maximumSize={364}>
-                                <SmallCard title={item.title ?? "Unnamed"} class={"card"}
-                                  image={createBinding(item, "image") as NonNullable<Accessor<never>>}
-                                  buttons={[{
-                                      id: "play-song",
-                                      iconName: "media-playback-start-symbolic",
-                                      onClicked: () => Media.getDefault().playSong(item, 0)
-                                  }]}
-                                />
-                            </Adw.Clamp>
-
-                        if(item instanceof Artist)
-                            return <SmallCard title={item.name ?? "Unknown Artist"} class={"card"}
-                              image={createBinding(item, "image") as NonNullable<Accessor<never>>}
-                              buttons={[{
-                                  id: "play-song",
-                                  iconName: "media-playback-start-symbolic",
-                                  onClicked: () => {
-                                      Vibe.getDefault().addPage({
-                                          content: item,
-                                          title: item.displayName ?? item.name ?? "Unnamed Artist"
-                                      });
-                                  }
-                              }]}
-                            />
-
-                        return <SmallCard title={item.title ?? "No Title"} class={"card"}
-                          image={createBinding(item, "image") as NonNullable<Accessor<never>>}
-                          buttons={[{
-                              id: "play-songlist",
-                              iconName: "media-playback-start-symbolic",
-                              onClicked: () => Media.getDefault().playList(item, 0)
-                          }]}
-                        />
-                    })}
-                </Gtk.FlowBox> as Gtk.FlowBox
-            : <Gtk.ScrolledWindow propagateNaturalWidth hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
+            <Gtk.ScrolledWindow propagateNaturalWidth hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
               vscrollbarPolicy={Gtk.PolicyType.NEVER}>
                 <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} rowSpacing={10} homogeneous 
                   selectionMode={Gtk.SelectionMode.NONE} 

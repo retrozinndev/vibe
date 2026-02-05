@@ -13,6 +13,7 @@ import { getPages, getToastOverlay, createMainWindow, start } from "./Window";
 import Media from "./modules/media";
 import { Page } from "./widgets/Page";
 import { Dialog } from "./widgets/Dialog";
+import { Mpris } from "./modules/mpris";
 
 
 @register({ GTypeName: "VibeApp" })
@@ -141,24 +142,25 @@ export class App extends Adw.Application {
 
         // init plugins
         PluginHandler.getDefault();
-        Vibe.getDefault().emit("initialized");
-
         PluginHandler.getDefault().notify("plugin");
+        Mpris.init();
+
+        Vibe.getDefault().emit("initialized");
     }
 
     private loadAssets(): void {
         // add custom icons
         Gtk.IconTheme.get_for_display(
             Gdk.Display.get_default()!
-        ).add_resource_path("/io/github/retrozinndev/vibe/icons");
+        ).add_resource_path("/io/github/retrozinndev/Vibe/icons");
 
         // load stylesheets
         Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/vibe/data", null
+            "/io/github/retrozinndev/Vibe/data", null
         ).forEach(name => 
             /\.css$/.test(name) && this.addStyle(
                 this.getDecoder().decode(Gio.resources_lookup_data(
-                    `/io/github/retrozinndev/vibe/data/${name}`,
+                    `/io/github/retrozinndev/Vibe/data/${name}`,
                     null
                 ).toArray())
             )
@@ -166,7 +168,7 @@ export class App extends Adw.Application {
 
         this.#license = this.getDecoder().decode(
             Gio.resources_lookup_data(
-                "/io/github/retrozinndev/vibe/data/license",
+                "/io/github/retrozinndev/Vibe/data/license",
                 null
             ).toArray()
         );

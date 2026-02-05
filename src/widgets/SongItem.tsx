@@ -5,10 +5,10 @@ import { getter, property, register } from "gnim/gobject";
 import { Song } from "libvibe/objects";
 import { omitObjectKeys } from "../modules/util";
 import { createScopedConnection } from "gnim-utils";
-import { SecondaryMenu } from "./SecondaryMenu";
 import Gdk from "gi://Gdk?version=4.0";
 import { Vibe } from "libvibe";
 import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
+import { Menu } from "./Menu";
 
 
 // TODO
@@ -40,7 +40,7 @@ export default class extends Adw.Bin {
             this.buttons = props.buttons;
 
         const image = props.song.image ?? props.song.album?.image;
-        const popover = <SecondaryMenu buttons={createBinding(this, "buttons")} /> as SecondaryMenu;
+        const popover = <Menu buttons={createBinding(this, "buttons")} /> as Menu;
 
         const click = Gtk.GestureClick.new();
         this.add_controller(click);
