@@ -14,8 +14,8 @@ This is only a demonstration, some UI elements don't work as intended.
 - [x] Play music locally
 - [x] Adwaita-based UI, but keeping it familiar to other apps
 - [x] Plugin support (for adding new sources and features...)
+- [x] Implement MPRIS
 - [ ] Play music through raw streams
-- [ ] Implement MPRIS
 - [ ] Internationalization (i18n)
 
 ## :hammer_and_wrench: Development
