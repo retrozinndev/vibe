@@ -36,16 +36,13 @@ export default class PluginHandler extends GObject.Object {
             Vibe.pluginsDir.make_directory_with_parents(null);
 
         exportToGlobal();
-
         this.loadPlugins();
     }
 
     private loadPlugins(): void {
-        this.#builtinPlugins.forEach(pl =>
-            this.importBultin(pl).catch(e => 
-                console.error(`An error occurred in built-in plugin(${
-                    pl.name}): ${e.message}\n${e.stack}`)
-            ));
+        this.#builtinPlugins.forEach(pl => this.importBultin(pl).catch(e => 
+            console.error(`An error occurred while loading the ${pl.name}(built-in) plugin: ${e.message}\n${e.stack}`)
+        ));
 
         Vibe.pluginsDir.enumerate_children_async(
             "standard::*", 
@@ -140,7 +137,7 @@ export default class PluginHandler extends GObject.Object {
     }
 
     public isBuiltin(plugin: Plugin): boolean {
-        return this.#builtins.filter(p => p.id === plugin.id)[0] !== undefined;
+        return this.#builtins.find(p => p.id === plugin.id) !== undefined;
     }
 
     public static getDefault(): PluginHandler {

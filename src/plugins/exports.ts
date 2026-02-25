@@ -3,7 +3,8 @@ let exported: boolean = false;
 const libvibe = {
     vibe: (await import("libvibe")),
     objects: (await import("libvibe/objects")),
-    plugin: (await import("libvibe/plugin"))
+    plugin: (await import("libvibe/plugin")),
+    utils: (await import("libvibe/utils"))
 };
 
 

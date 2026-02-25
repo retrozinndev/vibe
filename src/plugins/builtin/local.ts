@@ -2,8 +2,11 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
 import { Section, Vibe } from "libvibe";
-import { SongList, Song, Artist, Meta } from "libvibe/objects";
+import { SongList, Song, Artist } from "libvibe/objects";
+import { Meta } from "libvibe/utils";
 import { Plugin } from "libvibe/plugin";
+
+Gio._promisify(Gio.File.prototype, "enumerate_children_async", "enumerate_children_finish");
 
 
 @register()
@@ -18,6 +21,8 @@ export class PluginLocal extends Plugin {
 
     #library: Array<Song|SongList|Artist> = [];
     #musicDir: Gio.File;
+    #scanned: boolean = false;
+    #promise: Promise<unknown>|null = null;
 
     constructor() {
         super({
@@ -40,55 +45,61 @@ export class PluginLocal extends Plugin {
 
         if(!this.#musicDir.query_exists(null))
             this.#musicDir.make_directory_with_parents(null);
+    }
 
-        try {
-            this.addToLibrary(this.#musicDir);
-        } catch(_) {}
+    /** recursively list the children of a directory.
+      * it basically works as a `find`
+      * @param path the `GFile` for the directory 
+      * 
+      * @returns children and their children... */
+    async recurse(path: Gio.File): Promise<Array<Gio.File>> {
+        const files: Array<Gio.File> = [];
+        for(const child of (await path.enumerate_children_async(
+            "standard::*", null, GLib.PRIORITY_DEFAULT, null
+        ))) {
+            const obj = Gio.File.new_for_path(`${path.peek_path()}/${child.get_display_name()}`);
+            if(child.get_file_type() === Gio.FileType.DIRECTORY) {
+                const children = await this.recurse(obj);
+                files.push(...children);
+            } else {
+                files.push(obj);
+            }
+        }
+
+        return files;
     }
 
     /** recursively-add songs to library from a directory */
-    private addToLibrary(dir: Gio.File): void {
-        try {
-            const items = dir.enumerate_children(
-                "standard::*", 
-                Gio.FileQueryInfoFlags.NONE,
-                null
-            );
-            
-            for(const item of items) {
-                if(item.get_file_type() === Gio.FileType.DIRECTORY) {
-                    this.addToLibrary(Gio.File.new_for_path(`${dir.peek_path()!}/${item.get_name()}`));
-                    continue;
-                }
+    private async addToLibrary(dir: Gio.File): Promise<void> {
+        for(const file of (await this.recurse(dir))) {
+            if(!new RegExp(`\\.(${this.supportedFormats.join('|')})`).test(file.get_basename()!))
+                continue;
 
-                if(!new RegExp(`\\.(${this.supportedFormats.join('|')})`).test(item.get_name()))
-                   continue;
+            const song = new Song({
+                source: file,
+                title: file.get_basename()!,
+                plugin: this
+            });
+            this.#library.push(song);
 
-                const song = new Song({
-                    source: `${dir.peek_path()!}/${item.get_name()}`,
-                    plugin: this
-                });
-
-                try {
-                    const tags = Meta.getMetaTags(song.source as Gio.File);
-                    Meta.applyTags(song, tags, this, {
-                        applyImageAsynchronously: false
-                    });
-                } catch(e) {
-                    console.log("Local: couldn't apply metadata to song", e);
-                }
-
-                if(song.title === null)
-                    song.title = item.get_name();
-
-                this.#library.push(song);
-            }
-        } catch(e) {
-            console.error(e);
+            const tags = await Meta.getMetaTagsAsync(song.source!.peek_path()!);
+            Meta.applyTags(song, tags, this);
         }
     }
 
-    getRecommendations(length?: number, offset?: number) {
+    async getRecommendations(length?: number, offset?: number) {
+        if(!this.#scanned) {
+            this.#promise ??= this.addToLibrary(this.#musicDir).finally(() => {
+                this.#scanned = true;
+                this.#promise = null;
+            });
+
+            try {
+                if(Boolean(this.#promise))
+                    await this.#promise;
+            } catch(_) {}
+        }
+
         return [
             {
                 title: "Your Songs",
