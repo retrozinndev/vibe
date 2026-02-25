@@ -1,13 +1,13 @@
 import Gtk from "gi://Gtk?version=4.0";
 import GObject, { getter, gtype, property, register, signal } from "gnim/gobject";
-import { Page, PagesSignalSignatures, Pages as VibePages } from "libvibe/interfaces";
-import { omitObjectKeys } from "../modules/util";
+import { Page, Pages as PagesInterface } from "libvibe/interfaces";
 
 
 @register({ GTypeName: "VibePagesWidget" })
-export class Pages extends Gtk.Stack implements VibePages {
-    declare $signals: PagesSignalSignatures;
+export class Pages extends Gtk.Stack implements PagesInterface {
+    declare $signals: PagesInterface.SignalSignatures;
 
+    #connections: Array<number> = [];
     #statics: Array<Page> = [];
     #history: Array<Page> = [];
     #currentPage: Page|null = null;
@@ -22,7 +22,7 @@ export class Pages extends Gtk.Stack implements VibePages {
     get canGoBack() { return this.#history.length > 0 ? true : Boolean(this.lastStaticPage); }
 
     // internal properties
-    @getter(Array)
+    @getter(Array<Page>)
     get staticPages() { return this.#statics; }
 
     @property(gtype<Page|null>(GObject.Object))
@@ -54,13 +54,24 @@ export class Pages extends Gtk.Stack implements VibePages {
         this.notify("can-go-back");
     }
 
-    constructor(props: {
-        initialStaticPage?: Page
-    } & Partial<Gtk.Stack.ConstructorProps>) {
-        super(omitObjectKeys(props, [ "initialStaticPage" ]));
 
-        props.initialStaticPage &&
-            this.addStatic(props.initialStaticPage);
+    constructor(props: Partial<Gtk.Stack.ConstructorProps>) {
+        super({
+            cssName: "pages",
+            ...props
+        });
+
+        this.#connections.push(
+            this.connect("notify::visible-child", () => {
+                const child = this.get_visible_child() as Gtk.StackPage|null;
+
+                this.#currentPage = child as Page|null;
+                this.notify("current-page");
+            }),
+            this.connect("destroy", () => this.#connections.forEach(id =>
+                this.disconnect(id)
+            ))
+        );
     }
 
     public add(page: Page): void {
