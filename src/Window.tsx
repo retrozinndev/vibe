@@ -1,18 +1,17 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import { Accessor, createBinding, createRoot } from "gnim";
+import { Accessor, createBinding, createRoot, For } from "gnim";
 import { createScopedConnection, createSecureAccessorBinding } from "gnim-utils";
-import Home from "./tabs/Home";
-import Library from "./tabs/Library";
-import Search from "./tabs/Search";
 import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
-import Tab from "./widgets/Tab";
 import PluginSelector from "./widgets/PluginSelector";
-import { Page as PageWidget } from "./widgets/Page";
+import { Page, Page as PageWidget } from "./widgets/Page";
 import { Pages } from "./pages";
 import { Menu } from "./widgets/Menu";
 import AboutDialog from "./widgets/AboutDialog";
+import { Home } from "./pages/Home";
+import { Search } from "./pages/Search";
+import { Library } from "./pages/Library";
 
 
 let pages: Pages, toastOverlay: Adw.ToastOverlay;
@@ -31,18 +30,14 @@ export const createMainWindow = (app: Adw.Application) =>
     /> as Adw.ApplicationWindow;
 
 export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose) => {
-    const tabs: Array<Tab> = [
-        new Home(),
-        new Search(),
-        new Library()
-    ];
-
     pages = <Pages transitionType={Gtk.StackTransitionType.SLIDE_UP_DOWN} 
       transitionDuration={400} 
       $={(self) => {
-          tabs.forEach(tab => tab.page &&
-              self.addStatic(tab.page)
-          );
+          [
+            new Home(),
+            new Search(),
+            new Library()
+          ].forEach(page => self.addStatic(page))
       }}
     /> as Pages;
 
@@ -73,24 +68,26 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                             </Gtk.MenuButton>
                         </Adw.HeaderBar>
 
-                        {tabs.map(tab => 
-                            <NavigationTabButton iconName={createBinding(tab, "iconName")}
-                              actionClicked={() => {
-                                  // all tab pages are already added, so we can do that
-                                  pages.set_visible_child_full(
-                                      tab.id,
-                                      Gtk.StackTransitionType.SLIDE_UP_DOWN
-                                  );
+                        <For each={createBinding(pages, "staticPages") as Accessor<Array<Page>>}>
+                            {(page: Page) =>
+                                <NavigationTabButton iconName={createBinding(page, "iconName") as Accessor<string>}
+                                  actionClicked={() => {
+                                      // all tab pages are already added, so we can do that
+                                      pages.set_visible_child_full(
+                                          String(page.id),
+                                          Gtk.StackTransitionType.CROSSFADE
+                                      );
 
-                                  pages.lastStaticPage = tab.page;
-                              }} 
-                              visible={createBinding(tab, "visible")}
-                              label={createBinding(tab, "title")}
-                              class={createBinding(pages, "currentPage").as(page =>
-                                  tab.id === page.id ? "raised" : "flat"
-                              )}
-                            />
-                        )}
+                                      pages.lastStaticPage = page;
+                                  }} 
+                                  visible={createBinding(page, "visible")}
+                                  label={createBinding(page, "tabName")}
+                                  class={createBinding(pages, "currentPage").as(p =>
+                                      page.id === p.id ? "raised" : "flat"
+                                  )}
+                                />
+                            }
+                        </For>
                     </Gtk.Box>
                 </Adw.NavigationPage>
 
@@ -104,11 +101,12 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
                               visible={createBinding(pages, "canGoBack")}
                               onClicked={() => pages.back()}
                             />
+                            <Gtk.Button iconName={"view-refresh-symbolic"} $type="end"
+                              onClicked={() => pages.currentPage?.emit("refresh")}
+                            />
                         </Adw.HeaderBar>
                         <Adw.ToastOverlay $={self => toastOverlay = self}>
-                            <Gtk.Box class={"content"} vexpand>
-                                {pages}
-                            </Gtk.Box>
+                            {pages}
                         </Adw.ToastOverlay>
                     </Gtk.Box>
                 </Adw.NavigationPage>
