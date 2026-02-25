@@ -1,24 +1,28 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import { createBinding, createComputed, For, Node } from "gnim";
-import GObject, { getter, gtype, property, register } from "gnim/gobject";
+import { Accessor, createBinding, createComputed, For, Node } from "gnim";
+import GObject, { getter, gtype, property, register, signal } from "gnim/gobject";
 import { IconButton, LabelButton, DetailedButton, Section as SectionType, Vibe } from "libvibe";
-import { PageType, PageProps, Page as VibePage } from "libvibe/interfaces";
+import { Page as VibePage } from "libvibe/interfaces";
 import { Album, Artist, Playlist, Song } from "libvibe/objects";
 import Section from "./Section";
-import { construct } from "gnim-utils";
 import SongItem from "./SongItem";
-import Tab from "./Tab";
 import { PageHeader } from "./PageHeader";
+import { owns } from "../modules/util";
+import { Image } from "libvibe/utils";
 
 
 @register({ GTypeName: "VibePage" })
-export class Page<T extends PageType = Gtk.Widget> extends Adw.Bin implements VibePage<T> {
+export class Page<T extends VibePage.Type = Gtk.Widget> extends Adw.Bin implements VibePage<T> {
+    declare $signals: VibePage.SignalSignatures;
 
     readonly id: any;
-    tab: Tab|null = null;
 
     #content: T;
+
+    /** if the page is static, this will be the icon for the tab button */
+    @property(gtype<string|null>(String))
+    iconName: string|null = null;
 
     @property(Array)
     sections: Array<SectionType> = [];
@@ -26,14 +30,22 @@ export class Page<T extends PageType = Gtk.Widget> extends Adw.Bin implements Vi
     @property(String)
     title: string = "New page";
 
+    /** if the page is static, this will be the name for the tab button */
+    @property(String)
+    tabName: string;
+
     @getter(gtype<T>(GObject.Object))
     get content() { return this.#content; }
 
     @property(Array<IconButton & LabelButton>)
     buttons: Array<IconButton|LabelButton|DetailedButton> = [];
 
-    constructor(props: PageProps<T> & {
-        tab?: Tab;
+    @signal()
+    refresh() {}
+
+    constructor(props: VibePage.ConstructorProps<T> & {
+        tabName?: string;
+        iconName?: string;
     }) {
         super({
             cssName: "page"
@@ -44,17 +56,22 @@ export class Page<T extends PageType = Gtk.Widget> extends Adw.Bin implements Vi
         this.id = props.id ?? Vibe.getDefault().generateID();
         this.#content = props.content as T;
 
-        construct(this, {
-            title: props.title,
-            // @ts-ignore
-            buttons: props.buttons,
-            // @ts-ignore
-            sections: props.sections
-        });
-            
+        if(props.title !== undefined)
+            this.title = props.title;
 
-        if(props.tab !== undefined)
-            this.tab = props.tab;
+        this.tabName = props.tabName ?? this.title;
+
+        if(owns<Array<IconButton|LabelButton|DetailedButton>>(props, "buttons") && props.buttons !== undefined)
+            this.buttons = props.buttons;
+
+        if(owns<Array<SectionType>>(props, "sections") && props.sections !== undefined)
+            this.sections = props.sections;
+            
+        if(props.iconName !== undefined)
+            this.iconName = props.iconName;
+
+        if(props.tabName !== undefined)
+            this.tabName = props.tabName;
 
         let children: Node = undefined;
 
@@ -115,9 +132,10 @@ export class Page<T extends PageType = Gtk.Widget> extends Adw.Bin implements Vi
                           artist.displayName ?? artist.name
                       ).join(', ') || "Unknown Artist")
                   } buttons={createBinding(this, "buttons")}
+                  class={"header"}
                 />
                 <Gtk.ListBox class={"songs"} hexpand>
-                    {this.#content.songs.map(song =>
+                    {this.#content.toArray().map(song =>
                         <SongItem song={song} />
                     )}
                 </Gtk.ListBox>
@@ -127,10 +145,11 @@ export class Page<T extends PageType = Gtk.Widget> extends Adw.Bin implements Vi
               spacing={16}>
 
                 <PageHeader title={createBinding(this.#content, "title").as(s => s ?? "Untitled Album")} 
-                  image={this.#content.image ?? undefined} buttons={createBinding(this, "buttons")}
+                  image={createBinding(this.#content, "image") as Accessor<Image>} 
+                  buttons={createBinding(this, "buttons")}
                 />
                 <Gtk.ListBox class={"songs"} hexpand>
-                    {this.#content.songs.map(song =>
+                    {this.#content.toArray().map(song =>
                         <SongItem song={song} />
                     )}
                 </Gtk.ListBox>
@@ -153,7 +172,7 @@ export class Page<T extends PageType = Gtk.Widget> extends Adw.Bin implements Vi
     }
 
 
-    protected content_to_string<T extends PageType>(content: T): string {
+    protected content_to_string<T extends VibePage.Type>(content: T): string {
         if(content instanceof Song)
             return "song";
 

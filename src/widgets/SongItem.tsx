@@ -1,14 +1,14 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import { createBinding } from "gnim";
+import { createBinding, createComputed } from "gnim";
 import { getter, property, register } from "gnim/gobject";
 import { Song } from "libvibe/objects";
 import { omitObjectKeys } from "../modules/util";
 import { createScopedConnection } from "gnim-utils";
 import Gdk from "gi://Gdk?version=4.0";
 import { Vibe } from "libvibe";
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
 import { Menu } from "./Menu";
+import { Image } from "./Image";
 
 
 // TODO
@@ -39,7 +39,6 @@ export default class extends Adw.Bin {
         if(props.buttons)
             this.buttons = props.buttons;
 
-        const image = props.song.image ?? props.song.album?.image;
         const popover = <Menu buttons={createBinding(this, "buttons")} /> as Menu;
 
         const click = Gtk.GestureClick.new();
@@ -76,19 +75,14 @@ export default class extends Adw.Bin {
                             Vibe.getDefault().media.playSong(this.#song, 0);
                         }} iconName={"media-playback-start-symbolic"} />
 
-                        {image && 
-                            <Gtk.Picture contentFit={Gtk.ContentFit.CONTAIN} 
-                              widthRequest={64}
-                              $={(self) => {
-                                  if(image instanceof GdkPixbuf.Pixbuf) {
-                                      self.set_pixbuf(image);
-                                      return;
-                                  }
+                        <Image image={createComputed(() => {
+                              const image = createBinding(this, "song", "image")();
+                              const albumImage = createBinding(this, "song", "album", "image")();
 
-                                  self.set_paintable(image);
-                              }}
-                            />
-                        }
+                              return image ?? albumImage ?? null!;
+                          })}
+                          canShrink keepAspectRatio
+                        />
 
                         <Gtk.Box class={"data"} orientation={Gtk.Orientation.VERTICAL}>
                             <Gtk.Label label={props.song.title ?? "No Title"} xalign={0} />

@@ -1,13 +1,12 @@
 import Gtk from "gi://Gtk?version=4.0";
 import Media from "../modules/media";
-import { createBinding, createComputed, getScope, With } from "gnim";
+import { Accessor, createBinding, createComputed, getScope, With } from "gnim";
 import { Song } from "libvibe/objects";
-import { LoopMode, PlaybackStatus, ShuffleMode } from "libvibe/interfaces";
-import { createSubscription } from "gnim-utils";
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
-import Gdk from "gi://Gdk?version=4.0";
+import { Media as VibeMedia } from "libvibe/interfaces";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
+import { Image } from "./Image";
+import { Image as VibeImage } from "libvibe/utils";
 
 
 export default () =>
@@ -18,33 +17,8 @@ export default () =>
           hexpand vexpand>
 
             <Gtk.Box class={"song"} $type="start" hexpand={false} halign={Gtk.Align.START}>
-                <Gtk.Picture class={"album-image"} contentFit={Gtk.ContentFit.COVER}
-                  $={self => {
-                      const image = createComputed(() => [
-                          createBinding(Media.getDefault(), "song", "image")(),
-                          createBinding(Media.getDefault(), "song", "album", "image")()
-                      ]).as(([songImage, albumImage]) => songImage ?? albumImage);
-
-                      createSubscription(
-                          image,
-                          () => {
-                              const data = image.peek();
-                              
-                              if(!data) {
-                                  self.set_paintable(null);
-                                  return;
-                              }
-
-                              if(data instanceof GdkPixbuf.Pixbuf) {
-                                  self.set_pixbuf(data);
-                                  return;
-                              }
-
-                              if(data instanceof Gdk.Texture) 
-                                  self.set_paintable(data);
-                          }
-                      );
-                  }}
+                <Image image={createBinding(Media.getDefault(), "song", "image") as Accessor<VibeImage>}
+                  visible={createBinding(Media.getDefault(), "song", "image").as(Boolean)}
                 />
                 <With value={createBinding(Media.getDefault(), "song")}>
                     {(song: Song|null) => song &&
@@ -72,17 +46,17 @@ export default () =>
                   valign={Gtk.Align.CENTER}>
 
                     <Gtk.Button class={"shuffle flat"} iconName={createBinding(Media.getDefault(), "shuffle")
-                      .as(shuffle => shuffle === ShuffleMode.SHUFFLE ?
+                      .as(shuffle => shuffle === VibeMedia.ShuffleMode.SHUFFLE ?
                               "playlist-shuffle-symbolic"
                           : "playlist-consecutive-symbolic"
                       )}
                       onClicked={() => {
-                          if(Media.getDefault().shuffle === ShuffleMode.SHUFFLE) {
-                              Media.getDefault().shuffle = ShuffleMode.NONE;
+                          if(Media.getDefault().shuffle === VibeMedia.ShuffleMode.SHUFFLE) {
+                              Media.getDefault().shuffle = VibeMedia.ShuffleMode.NONE;
                               return;
                           }
 
-                          Media.getDefault().shuffle = ShuffleMode.SHUFFLE;
+                          Media.getDefault().shuffle = VibeMedia.ShuffleMode.SHUFFLE;
                       }}
                     />
                     <Gtk.Button class={"previous flat"} vexpand={false}
@@ -91,18 +65,18 @@ export default () =>
                     />
                     <Gtk.Button class={"pause pill"}
                       iconName={createBinding(Media.getDefault(), "status").as(status =>
-                          status === PlaybackStatus.PAUSED ?
+                          status === VibeMedia.PlaybackStatus.PAUSED ?
                               "media-playback-start-symbolic"
                           : "media-playback-pause-symbolic"
                       )} onClicked={() => {
                           const status = Media.getDefault().status;
 
-                          if(status === PlaybackStatus.PLAYING) {
+                          if(status === VibeMedia.PlaybackStatus.PLAYING) {
                               Media.getDefault().pause();
                               return;
                           }
 
-                          if(status === PlaybackStatus.PAUSED) {
+                          if(status === VibeMedia.PlaybackStatus.PAUSED) {
                               Media.getDefault().resume();
                               return;
                           }
@@ -116,23 +90,23 @@ export default () =>
                     <Gtk.Button class={"loop flat"} iconName={createBinding(Media.getDefault(), "loop")
                       .as(loop => {
                           switch(loop) {
-                              case LoopMode.LIST:
+                              case VibeMedia.LoopMode.LIST:
                                   return "arrows-loop-tall-symbolic";
 
-                              case LoopMode.SONG:
+                              case VibeMedia.LoopMode.SONG:
                                   return "media-playlist-repeat-song-symbolic";
                           }
 
                           return "arrows-loop-tall-disabled-symbolic";
                       })}
                       onClicked={() => {
-                          if(Media.getDefault().loop === LoopMode.NONE)
-                              return Media.getDefault().loop = LoopMode.LIST;
+                          if(Media.getDefault().loop === VibeMedia.LoopMode.NONE)
+                              return Media.getDefault().loop = VibeMedia.LoopMode.LIST;
 
-                          if(Media.getDefault().loop === LoopMode.LIST)
-                              return Media.getDefault().loop = LoopMode.SONG;
+                          if(Media.getDefault().loop === VibeMedia.LoopMode.LIST)
+                              return Media.getDefault().loop = VibeMedia.LoopMode.SONG;
 
-                          Media.getDefault().loop = LoopMode.NONE;
+                          Media.getDefault().loop = VibeMedia.LoopMode.NONE;
                       }}
                     />
                 </Gtk.Box>

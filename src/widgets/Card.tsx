@@ -1,16 +1,16 @@
 import Gdk from "gi://Gdk?version=4.0";
-import GdkPixbuf from "gi://GdkPixbuf?version=2.0";
-import Gio from "gi://Gio?version=2.0";
 import Gtk from "gi://Gtk?version=4.0";
-import { createBinding, For } from "gnim";
+import { Accessor, createBinding, createComputed, For } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { IconButton, isIconButton, LabelButton } from "libvibe";
 import { omitObjectKeys } from "../modules/util";
-import { createScopedConnection, createSubscription, toBoolean } from "gnim-utils";
+import { createScopedConnection, toBoolean } from "gnim-utils";
 import Pango from "gi://Pango?version=1.0";
 import { Album, Artist, Playlist, Song, SongList } from "libvibe/objects";
+import { Image as VibeImage } from "libvibe/utils";
 import Media from "../modules/media";
 import { Menu } from "./Menu";
+import { Image } from "./Image";
 
 
 /** A nice widget with a card view, containing an image(optional), 
@@ -51,13 +51,13 @@ class Card extends Gtk.FlowBoxChild {
     @property(gtype<string|null>(String))
     description: string|null = null;
 
-    /** the card's image in pixbuf or texture format, can be null */
-    @property(gtype<GdkPixbuf.Pixbuf|Gdk.Texture|null>(GObject.Object))
-    image: GdkPixbuf.Pixbuf|Gdk.Texture|null = null;
+    /** the card's image, can be null */
+    @property(gtype<VibeImage|null>(GObject.Object))
+    image: VibeImage|null = null;
 
     /** the card's buttons array, can be null */
     @property(gtype<Array<IconButton|LabelButton>|null>(Array))
-    buttons: Array<IconButton|LabelButton>|null = null;
+    buttons: Array<IconButton|LabelButton> = [];
 
     /** secondary menu, available when the user clicks the card 
       * using the mouse's `SECONDARY_BUTTON` */
@@ -126,85 +126,43 @@ class Card extends Gtk.FlowBoxChild {
         if(props.menu !== undefined)
             this.menu = props.menu;
 
-        this.set_child(this.#box = <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-            <Gtk.Picture contentFit={Gtk.ContentFit.COVER} canShrink keepAspectRatio halign={Gtk.Align.CENTER}
-              $={(self) => {
-                  createSubscription(
-                      createBinding(this, "image"),
-                      () => {
-                          if(!this.image) {
-                              self.set_resource(
-                                  "/io/github/retrozinndev/Vibe/icons/scalable/actions/folder-music-symbolic.svg"
-                              );
-                              return;
-                          }
 
-                          if(this.image instanceof GdkPixbuf.Pixbuf) {
-                              self.set_pixbuf(this.image);
-                              return;
-                          }
-
-                          self.set_paintable(this.image);
-                      }
-                  );
-              }} visible={toBoolean(createBinding(this, "image"))}
-            />
-            <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
-                <Gtk.Label label={createBinding(this, "title")} 
-                  visible={toBoolean(createBinding(this, "title"))}
-                  class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
-                  xalign={0}
+        this.set_child(
+            this.#box = <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
+                <Image image={createBinding(this, "image") as Accessor<VibeImage>} canShrink
+                  keepAspectRatio visible={toBoolean(createBinding(this, "image"))}
                 />
-                <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
-                  visible={toBoolean(createBinding(this, "description"))}
-                  class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
-                />
-            </Gtk.Box>
-            <Gtk.Separator visible={toBoolean(createBinding(this, "buttons"))} />
-            <Gtk.Box hexpand halign={createBinding(this, "buttonAlign")} 
-              visible={toBoolean(createBinding(this, "buttons"))}>
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand>
+                    <Gtk.Label label={createBinding(this, "title")} 
+                      visible={toBoolean(createBinding(this, "title"))}
+                      class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
+                      xalign={0}
+                    />
+                    <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
+                      visible={toBoolean(createBinding(this, "description"))}
+                      class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
+                    />
+                </Gtk.Box>
+                <Gtk.Separator visible={toBoolean(createBinding(this, "buttons"))} />
+                <Gtk.Box hexpand halign={createBinding(this, "buttonAlign")} 
+                  visible={toBoolean(createBinding(this, "buttons"))}>
 
-                <For each={createBinding(this, "buttons").as(b => b!)}>
-                    {(button: IconButton|LabelButton) =>
-                        <Gtk.Button iconName={isIconButton(button) ?
-                            button.iconName : undefined
-                          } label={!isIconButton(button) ?
-                            button.label : undefined
-                          } onClicked={() => {
-                              this.emit("button-clicked", button);
-                              button.onClicked?.();
-                          }} class={"flat"}
-                        />
-                    }
-                </For>
-            </Gtk.Box>
-        </Gtk.Box> as Gtk.Box);
-
-
-        if(props.image !== undefined) {
-            if(props.image instanceof GdkPixbuf.Pixbuf || props.image instanceof Gdk.Texture) {
-                this.image = props.image;
-                return;
-            }
-
-            let file: Gio.File = typeof props.image === "string" ?
-                Gio.File.new_for_path(props.image)
-            : props.image;
-
-            if(file?.query_exists(null)) {
-                try {
-                    const pixbuf = GdkPixbuf.Pixbuf.new_from_file(file.peek_path()!);
-                    this.image = pixbuf;
-                } catch(e) {
-                    console.error(`Card: Couldn't load image: ${(e as Error).message}\n${
-                        (e as Error).stack}`);
-                }
-
-                return;
-            }
-
-            console.warn("Card: Couldn't load image: file inaccessible or does not exist");
-        }
+                    <For each={createBinding(this, "buttons").as(b => b!)}>
+                        {(button: IconButton|LabelButton) =>
+                            <Gtk.Button iconName={isIconButton(button) ?
+                                button.iconName : undefined
+                              } label={!isIconButton(button) ?
+                                button.label : undefined
+                              } onClicked={() => {
+                                  this.emit("button-clicked", button);
+                                  button.onClicked?.();
+                              }} class={"flat"}
+                            />
+                        }
+                    </For>
+                </Gtk.Box>
+            </Gtk.Box> as Gtk.Box
+        );
     }
 
 
@@ -219,9 +177,15 @@ class Card extends Gtk.FlowBoxChild {
         onClickedCallback?: (self: Card) => void,
         menu?: Menu
     ): Card {
-        return <Card title={song.title ?? "Untitled"}
-            description={song.artist.map(a => a.displayName ?? a.name).join(", ")}
-            image={song.image ?? song.album?.image ?? undefined}
+        return <Card title={createBinding(song, "title")(s => s ?? "Untitled")}
+            description={createBinding(song, "artist")(arts =>
+                arts.map(a => a.displayName ?? a.name).join(", "))
+            } image={createComputed(() => {
+                const image = createBinding(song, "image")();
+                const albumImage = createBinding(song, "album", "image")();
+
+                return image ?? albumImage ?? null!; // let's trick typescript lol
+            })}
             buttons={buttons} onClicked={onClickedCallback}
             menu={menu}
         /> as Card;
@@ -232,7 +196,7 @@ class Card extends Gtk.FlowBoxChild {
         buttons: Card.ConstructorProps["buttons"] = [{
             iconName: "media-playback-start-symbolic",
             onClicked: () => {
-                if(album.songs.length < 1)
+                if(album.length < 1)
                     return;
 
                 Media.getDefault().playList(album, 0);
@@ -241,9 +205,10 @@ class Card extends Gtk.FlowBoxChild {
         onClickedCallback?: (self: Card) => void,
         menu?: Menu
     ): Card {
-        return <Card title={album.title ?? "Untitled Album"}
-          description={album.artist.map(a => a.displayName ?? a.name).join(", ")}
-          image={album.image ?? undefined}
+        return <Card title={createBinding(album, "title").as(s => s ?? "Untitled Album")}
+          description={createBinding(album, "artist")(arts => 
+                arts.map(a => a.displayName ?? a.name).join(", "))
+          } image={createBinding(album, "image") as Accessor<VibeImage>}
           buttons={buttons} onClicked={onClickedCallback}
           menu={menu}
         /> as Card;
@@ -254,7 +219,7 @@ class Card extends Gtk.FlowBoxChild {
         buttons: Card.ConstructorProps["buttons"] = [{
             iconName: "media-playback-start-symbolic",
             onClicked: () => {
-                if(list.songs.length < 1)
+                if(list.length < 1)
                     return;
 
                 Media.getDefault().playList(list, 0);
@@ -263,9 +228,9 @@ class Card extends Gtk.FlowBoxChild {
         onClickedCallback?: (self: Card) => void,
         menu?: Menu
     ): Card {
-        return <Card title={list.title ?? "Untitled Playlist"}
-          description={list.description ?? undefined}
-          image={list.image ?? undefined}
+        return <Card title={createBinding(list, "title").as(s => s ?? "Untitled Playlist")}
+          description={createBinding(list, "description") as Accessor<string>}
+          image={createBinding(list, "image") as Accessor<VibeImage>}
           buttons={buttons} onClicked={onClickedCallback}
           menu={menu}
         /> as Card;
@@ -276,7 +241,7 @@ class Card extends Gtk.FlowBoxChild {
         buttons: Card.ConstructorProps["buttons"] = [{
             iconName: "media-playback-start-symbolic",
             onClicked: () => {
-                if(list.songs.length < 1)
+                if(list.length < 1)
                     return;
 
                 Media.getDefault().playList(list, 0);
@@ -291,9 +256,9 @@ class Card extends Gtk.FlowBoxChild {
         if(list instanceof Playlist)
             return this.new_for_playlist(list, buttons, onClickedCallback, menu);
 
-        return <Card title={list.title ?? "Untitled List"}
-          description={list.description ?? undefined}
-          image={list.image ?? undefined}
+        return <Card title={createBinding(list, "title").as(s => s ?? "Untitled List")}
+          description={createBinding(list, "description") as Accessor<string>}
+          image={createBinding(list, "image") as Accessor<VibeImage>}
           buttons={buttons} onClicked={onClickedCallback}
           menu={menu}
         /> as Card;
@@ -305,11 +270,16 @@ class Card extends Gtk.FlowBoxChild {
         onClickedCallback?: (self: Card) => void,
         menu?: Menu
     ): Card {
-        return <Card title={artist.displayName ?? artist.name ?? "Untitled"}
-            description={artist.description ?? undefined}
-            image={artist.image ?? undefined}
-            buttons={buttons} onClicked={onClickedCallback}
-            menu={menu}
+        return <Card title={createComputed(() => {
+              const displayName = createBinding(artist, "displayName")();
+              const name = createBinding(artist, "name")();
+
+              return displayName ?? name ?? "Unknown Artist";
+          })}
+          description={createBinding(artist, "description") as Accessor<string>}
+          image={createBinding(artist, "image") as Accessor<VibeImage>}
+          buttons={buttons} onClicked={onClickedCallback}
+          menu={menu}
         /> as Card;
     }
 
@@ -333,16 +303,16 @@ namespace Card {
         "clicked": (x: number, y: number) => void;
         "menu-request": (x: number, y: number) => void;
         "button-clicked": (button: IconButton|LabelButton) => void;
-        "notify::title": (title: string) => void;
-        "notify::description": (description: string|null) => void;
-        "notify::image": (image: GdkPixbuf.Pixbuf|null) => void;
-        "notify::buttons": (buttons: Array<IconButton|LabelButton>|null) => void;
+        "notify::title": () => void;
+        "notify::description": () => void;
+        "notify::image": () => void;
+        "notify::buttons": () => void;
     }
 
     export interface ConstructorProps extends Gtk.FlowBoxChild.ConstructorProps {
         title: string;
         description: string;
-        image: GdkPixbuf.Pixbuf|Gdk.Texture|string|Gio.File;
+        image: VibeImage;
         buttonAlign: Gtk.Align;
         imageHeight: number;
         menu: Menu;

@@ -1,4 +1,3 @@
-import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import Pango from "gi://Pango?version=1.0";
 import { createBinding, For } from "gnim";
@@ -15,6 +14,7 @@ import { Artist, Song, SongList } from "libvibe/objects";
 import { omitObjectKeys } from "../modules/util";
 import { toBoolean } from "gnim-utils";
 import Card from "./Card";
+import Adw from "gi://Adw?version=1";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -103,49 +103,52 @@ export default class Section extends Gtk.Box {
         );
 
         this.append(
-            <Gtk.ScrolledWindow propagateNaturalWidth hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC}
-              vscrollbarPolicy={Gtk.PolicyType.NEVER}>
-                <Gtk.FlowBox orientation={Gtk.Orientation.HORIZONTAL} rowSpacing={10} homogeneous 
-                  selectionMode={Gtk.SelectionMode.NONE} 
-                  $={self => {
-                      this.#content.map(item => {
-                          if(item instanceof Song)
-                              return Card.new_for_song(item, undefined, () => {
-                                  Vibe.getDefault().addPage({
-                                      content: item,
-                                      title: item.title ?? "Untitled Song",
-                                      buttons: item.artist.map(artist => ({
-                                          label: `Go to ${artist.displayName ?? artist.name}`,
-                                          iconName: "person-symbolic",
-                                          onClicked: () => Vibe.getDefault().addPage({
-                                              content: artist,
-                                              title: artist.displayName ?? artist.name
-                                          })
-                                      }))
-                                  })
-                              });
+            <Gtk.ScrolledWindow hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} vscrollbarPolicy={Gtk.PolicyType.NEVER}
+              propagateNaturalWidth propagateNaturalHeight hexpand>
+              
+                <Adw.Clamp maximumSize={1} halign={Gtk.Align.START}>
+                    <Gtk.Grid orientation={Gtk.Orientation.HORIZONTAL} rowSpacing={6} 
+                      columnSpacing={6} baselineRow={0} hexpand={false} vexpand={false}>
 
-                          if(item instanceof Artist)
-                              return Card.new_for_artist(item, undefined, () => Vibe.getDefault().addPage({
-                                  content: item,
-                                  title: item.displayName ?? item.name
-                              }));
-
-                          return Card.new_for_songlist(item);
-                    }).forEach(card => {
-                        card.add_css_class("card");
-
-                        self.insert(
-                            <Adw.Clamp orientation={Gtk.Orientation.HORIZONTAL} maximumSize={106}>
-                                {card}
-                            </Adw.Clamp> as Adw.Clamp,
-                        -1);
-
-                        (self.get_last_child() as Gtk.FlowBoxChild).set_hexpand(false);
-                    });
-                  }}
-                />
+                        {this.genCards(this.#content)}
+                    </Gtk.Grid>
+                </Adw.Clamp>
             </Gtk.ScrolledWindow> as Gtk.ScrolledWindow
         );
+    }
+    
+    private genCards(items: Array<Artist|Song|SongList>): Array<Gtk.Widget> {
+        return items.map(item => {
+            let widget!: Card;
+            if(item instanceof Song)
+                widget = Card.new_for_song(item, undefined, () => {
+                    Vibe.getDefault().addPage({
+                        content: item,
+                        title: item.title ?? "Untitled",
+                        buttons: item.artist.map(artist => ({
+                            label: `Go to ${artist.displayName ?? artist.name}`,
+                            iconName: "person-symbolic",
+                            onClicked: () => Vibe.getDefault().addPage({
+                                content: artist,
+                                title: artist.displayName ?? artist.name
+                            })
+                        }))
+                    })
+                });
+
+            else if(item instanceof Artist)
+                widget = Card.new_for_artist(item, undefined, () => Vibe.getDefault().addPage({
+                    content: item,
+                    title: item.displayName ?? item.name
+                }));
+
+            else if(item instanceof SongList)
+                widget = Card.new_for_songlist(item);
+
+
+            widget?.add_css_class("card");
+            widget.set_size_request(150, -1);
+            return widget;
+        });
     }
 }
