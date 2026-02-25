@@ -2,7 +2,7 @@ import GLib from "gi://GLib?version=2.0";
 import Gst from "gi://Gst?version=1.0";
 import { createRoot, getScope, Scope } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
-import { LoopMode, MediaSignalSignatures, PlaybackStatus, ShuffleMode, Media as VibeMedia } from "libvibe/interfaces";
+import { Media as VibeMedia } from "libvibe/interfaces";
 import { Song, SongList, Queue } from "libvibe/objects";
 
 
@@ -11,14 +11,14 @@ import { Song, SongList, Queue } from "libvibe/objects";
 export default class Media extends GObject.Object implements VibeMedia {
     private static instance: Media;
 
-    declare $signals: MediaSignalSignatures;
+    declare $signals: VibeMedia.SignalSignatures;
 
     #scope: Scope = createRoot(() => getScope());
-    #pipeline!: Gst.Pipeline;
+    #pipeline: Gst.Pipeline|null = null;
     #length: number = 0;
     #position: number = 0;
     #queue: Queue = new Queue();
-    #status: PlaybackStatus = PlaybackStatus.STOPPED;
+    #status: VibeMedia.PlaybackStatus = VibeMedia.PlaybackStatus.STOPPED;
     #mute: boolean = false;
     #intervals: Array<GLib.Source> = [];
     #song: Song|null = null;
@@ -31,7 +31,7 @@ export default class Media extends GObject.Object implements VibeMedia {
     @getter(gtype<SongList|null>(SongList))
     get queue() { return this.#queue; }
 
-    @getter(gtype<PlaybackStatus>(Number))
+    @getter(gtype<VibeMedia.PlaybackStatus>(Number))
     get status() { return this.#status; }
 
     @getter(Number)
@@ -53,7 +53,7 @@ export default class Media extends GObject.Object implements VibeMedia {
 
     @setter(Number)
     set position(newPos: number) {
-        if(!this.#song || this.#status === PlaybackStatus.STOPPED)
+        if(!this.#song || this.#status === VibeMedia.PlaybackStatus.STOPPED)
             return;
 
         this.#pipeline?.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, newPos * Gst.SECOND);
@@ -72,11 +72,11 @@ export default class Media extends GObject.Object implements VibeMedia {
         );
     }
 
-    @property(gtype<LoopMode>(Number))
-    loop: LoopMode = LoopMode.NONE;
+    @property(gtype<VibeMedia.LoopMode>(Number))
+    loop: VibeMedia.LoopMode = VibeMedia.LoopMode.NONE;
 
-    @property(gtype<ShuffleMode>(Number))
-    shuffle: ShuffleMode = ShuffleMode.NONE;
+    @property(gtype<VibeMedia.ShuffleMode>(Number))
+    shuffle: VibeMedia.ShuffleMode = VibeMedia.ShuffleMode.NONE;
 
     @signal(GObject.Object)
     playing(_: Song) {}
@@ -123,55 +123,55 @@ export default class Media extends GObject.Object implements VibeMedia {
     }
 
     public playList(list: SongList, posNum: number): void {
-        if(list.songs.length < 1)
+        if(list.length < 1)
             return;
 
         if(list !instanceof Queue) { 
             this.#queue.clear();
-            list.songs.forEach(song => this.#queue.add(song));
+            list.forEach(song => this.#queue.add(song));
             this.notify("queue");
         }
 
-        if(list.songs[posNum] == null) {
+        if(list.get(posNum) == null) {
             console.error(`Couldn't play song in position ${posNum} of the songlist with id: ${list.id
                 }. Falling back to playing the first song`);
 
-            this.play(this.#queue.songs[0]);
+            this.play(this.#queue.get(0)!);
             return;
         }
 
         this.#queue.currentSong = posNum;
-        this.play(this.#queue.songs[posNum]);
+        this.play(this.#queue.get(posNum)!);
     }
 
     public resume(): void {
-        if(!this.#song || this.#status !== PlaybackStatus.PAUSED)
+        if(!this.#song || this.#status !== VibeMedia.PlaybackStatus.PAUSED)
             return;
 
         this.#pipeline?.set_state(Gst.State.PLAYING);
-        this.#status = PlaybackStatus.PLAYING;
+        this.#status = VibeMedia.PlaybackStatus.PLAYING;
         this.notify("status");
         this.emit("resumed", this.#song);
     }
 
     public pause(): void {
-        if(this.#status !== PlaybackStatus.PLAYING)
+        if(this.#status !== VibeMedia.PlaybackStatus.PLAYING)
             return;
 
         this.#pipeline?.set_state(Gst.State.PAUSED);
-        this.#status = PlaybackStatus.PAUSED;
+        this.#status = VibeMedia.PlaybackStatus.PAUSED;
         this.emit("paused", this.#song!);
         this.notify("status");
     }
 
     public next(): void {
-        if(this.#queue.songs.length < 1 || !this.#song)
+        if(this.#queue.length < 1 || !this.#song)
             return;
 
         // if the user clearly clicked in the "next" button, they don't want this anymore(probably)
         // maybe doing a config to enable/disable this function can avoid user angriness :P
-        if(LoopMode.SONG)
-            this.loop = LoopMode.LIST;
+        if(this.loop === VibeMedia.LoopMode.SONG)
+            this.loop = VibeMedia.LoopMode.LIST;
 
         const nextSong: Song|undefined = this.#queue.get(this.#queue.currentSong+1);
         if(nextSong) { // it has a next song in the queue
@@ -183,7 +183,7 @@ export default class Media extends GObject.Object implements VibeMedia {
 
         // the previous song was the last, so we loop back the queue(if mode is LIST)
         // (this also works if it there's a single song in the queue)
-        if(this.loop === LoopMode.LIST) {
+        if(this.loop === VibeMedia.LoopMode.LIST) {
             const firstSong = this.#queue.get(0)!;
             this.#queue.currentSong = 0;
             this.play(firstSong);
@@ -193,13 +193,13 @@ export default class Media extends GObject.Object implements VibeMedia {
 
     public previous(): void {
         // also making this behavior a configurable thing would be nice
-        if(this.#song && (this.#queue.songs.length < 2 || this.#position >= (Gst.SECOND * 3))) {
+        if(this.#song && (this.#queue.length < 2 || this.#position >= (Gst.SECOND * 3))) {
             this.position = 0;
             return;
         }
 
-        if(this.loop === LoopMode.SONG)
-            this.loop = LoopMode.LIST;
+        if(this.loop === VibeMedia.LoopMode.SONG)
+            this.loop = VibeMedia.LoopMode.LIST;
 
         const previousSong = this.#queue.currentSong > -1 &&
             this.#queue.get(this.#queue.currentSong-1);
@@ -213,8 +213,8 @@ export default class Media extends GObject.Object implements VibeMedia {
         }
 
         // there's no previous song, so we loop back to the last(if mode is LIST)
-        if(this.loop === LoopMode.LIST) {
-            this.#queue.currentSong = this.#queue.songs.length - 1;
+        if(this.loop === VibeMedia.LoopMode.LIST) {
+            this.#queue.currentSong = this.#queue.length - 1;
             const lastSong = this.#queue.get(this.#queue.currentSong)!;
 
             this.play(lastSong);
@@ -237,7 +237,7 @@ export default class Media extends GObject.Object implements VibeMedia {
                     break;
             }
 
-            if(this.loop !== LoopMode.NONE) {
+            if(this.loop !== VibeMedia.LoopMode.NONE) {
                 this.next();
 
                 return false;
@@ -253,19 +253,27 @@ export default class Media extends GObject.Object implements VibeMedia {
 
         this.#intervals.push(
             setInterval(() => {
-                if(!this.#song || this.#status !== PlaybackStatus.PLAYING) 
+                if(!this.#song || this.#status !== VibeMedia.PlaybackStatus.PLAYING) 
                     return;
 
-                this.#position = this.#pipeline.query_position(Gst.Format.TIME)[1] / Gst.SECOND;
-                this.notify("position");
+                const newPos = this.#pipeline?.query_position(Gst.Format.TIME)[1];
+                if(newPos === undefined) {
+                    this.#position = 0;
+                    this.notify("position");
+                } else if(this.#position !== newPos) {
+                    this.#position = newPos / Gst.SECOND;
+                    this.notify("position");
+                }
 
-                const newLength = this.#pipeline.query_duration(Gst.Format.TIME)[1] / Gst.SECOND;
-
-                if(newLength !== this.#length) {
-                    this.#length = newLength;
+                const newLength = this.#pipeline?.query_duration(Gst.Format.TIME)[1];
+                if(newLength === undefined) {
+                    this.#length = 0;
+                    this.notify("length");
+                } else if(newLength !== this.#length) {
+                    this.#length = newLength / Gst.SECOND;
                     this.notify("length");
                 }
-            }, 1000)
+            }, 800)
         );
     }
 
@@ -287,15 +295,21 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
 
         this.#pipeline?.set_state(Gst.State.NULL);
         this.#pipeline?.get_bus().remove_watch();
-        this.#pipeline = Gst.Pipeline.new("main-pipeline");
 
-        const playbin = Gst.ElementFactory.make("playbin3", "player")!;
 
-        this.#pipeline.add(playbin);
-        playbin.set_property("video-sink", Gst.ElementFactory.make("fakevideosink", "fakesink")); // ignore video stream
-        playbin.set_property("volume", this.#volume / 100);
-        playbin.set_property("mute", this.#mute);
-        playbin.set_property("uri", `file://${song.source.peek_path()!}`);
+        if(!this.#pipeline) {
+            const playbin = Gst.ElementFactory.make("playbin3", "player")!;
+            this.#pipeline = Gst.Pipeline.new("pipeline");
+
+            this.#pipeline.add(playbin);
+            playbin.set_property("video-sink", Gst.ElementFactory.make("fakevideosink", "fakesink")); // ignore video stream
+            playbin.set_property("volume", this.#volume / 100);
+            playbin.set_property("mute", this.#mute);
+        }
+
+        this.#pipeline.get_by_name("player")!.set_property(
+            "uri", `file://${song.source.peek_path()!}`
+        );
     
         this.#pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, pos);
         this.addPipelineWatch();
@@ -312,15 +326,15 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         return true;
     }
 
-    private stateToPlaybackStatus(state: Gst.State): PlaybackStatus {
+    private stateToPlaybackStatus(state: Gst.State): VibeMedia.PlaybackStatus {
         switch(state) {
             case Gst.State.PAUSED:
-                return PlaybackStatus.PAUSED;
+                return VibeMedia.PlaybackStatus.PAUSED;
 
             case Gst.State.NULL:
-                return PlaybackStatus.STOPPED;
+                return VibeMedia.PlaybackStatus.STOPPED;
         }
 
-        return PlaybackStatus.PLAYING;
+        return VibeMedia.PlaybackStatus.PLAYING;
     }
 }
