@@ -16,7 +16,7 @@ window .container {
 .omniplayer {
   padding: 4px 6px;
 
-  & picture.album-image {
+  & vibeimage {
     margin-right: 10px;
     border-radius: 8px;
   }
@@ -40,27 +40,18 @@ window .container {
 }
 
 card {
-  padding: 12px;
+  padding: 8px;
   transition: 120ms linear;
   min-width: 106px;
   min-height: 160px;
 
-  & picture {
+  &.card {
+    border-radius: 18px;
+  }
+
+  & vibeimage { 
     border-radius: 10px;
     margin-bottom: 6px;
-  }
-}
-
-smallcard {
-  padding: 10px;
-  min-height: 18px;
-
-  & image.art {
-    margin-right: 6px;
-  }
-
-  & .buttons {
-    margin-left: 6px;
   }
 }
 
@@ -69,8 +60,22 @@ page {
   padding-bottom: 0;
   background: var(--theme-bg-color);
 
+  & .header {
+    & .data {
+      padding-top: 4px;
+    }
+
+    & > clamp {
+      margin-right: 10px;
+
+      & > vibeimage {
+        border-radius: 14px;
+      }
+    }
+  }
+
   & .page-search {
-    & .search-entry {
+    & entry.search {
       $height: 48px;
 
       min-height: $height;
