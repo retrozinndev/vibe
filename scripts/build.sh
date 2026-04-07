@@ -62,6 +62,9 @@ $esbuild --bundle ./src/app.ts \
     --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" \
     `[[ $write_meta ]] && echo -n "--metafile=$output/meta.json"` 
 
+_rawjs=`echo "#!/usr/bin/gjs -m" | cat - $output/vibe.js`
+echo "$_rawjs" > $output/vibe.js
+
 # -> Sass (stylesheet)
 echo "[info] compiling sass in \`./build/resources/style.css\`"
 sass --no-source-map -I ./data/styles data/styles/style.scss ./build/resources/style.css
@@ -81,11 +84,12 @@ echo -en "\
 #!/usr/bin/bash
 
 runtime_dir=\${XDG_RUNTIME_DIR:-\"/run/user/\$(id -u)\"}/vibe
-file=\"\$runtime_dir/app.js\"
+file=\"\$runtime_dir/vibe\"
 
 mkdir -p \"\$runtime_dir\"
 
 echo -n '`cat $output/vibe.js | base64`' | base64 --decode > \"\$file\"
-gjs -m \"\$file\"
+chmod +x "\$file"
+exec \"\$file\"
 " > $output/vibe
 chmod +x $output/vibe
