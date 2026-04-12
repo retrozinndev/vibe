@@ -12,9 +12,7 @@ import { Song } from "libvibe/objects";
 import { Image } from "libvibe/utils";
 
 
-@iface("org.mpris.MediaPlayer2", {
-    GTypeName: "VibeMpris"
-})
+@iface("org.mpris.MediaPlayer2", { GTypeName: "VibeMpris" })
 export class Mpris extends Service {
     private static instance: Mpris|null;
     private static player: Mpris.Player|null;
@@ -147,9 +145,9 @@ export namespace Mpris {
 
             this.notify("LoopStatus");
         }
-        /*@getter("d") get MinimumRate() { return 1.0; }
+        @getter("d") get MinimumRate() { return 1.0; }
         @getter("d") get Rate() { return 1.0; }
-        @getter("d") get MaximumRate() { return 1.0; } */ // doubles are bugged in gnim
+        @getter("d") get MaximumRate() { return 1.0; }
         @getter("b") get Shuffle() { return Media.getDefault().shuffle !== VibeMedia.ShuffleMode.NONE; }
         @setter("b") set Shuffle(enabled: boolean) {
             Media.getDefault().shuffle = enabled ?
@@ -159,7 +157,7 @@ export namespace Mpris {
             this.notify("Shuffle");
         }
         @getter("a{sv}") get Metadata() { return this.#Metadata; }
-        //@property("d") Volume: number = GLib.Variant.new_double(1.0) as unknown as number; // also
+        @property("d") Volume: number = 1.0;
         @getter("x") get Position() { return this.secToMicrosec(Media.getDefault().position); }
 
         // capabilities
