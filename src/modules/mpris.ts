@@ -285,7 +285,6 @@ export namespace Mpris {
                                 )
                             )
                         ),
-                        "xesam:album": GLib.Variant.new_string(song.album?.title ?? "No Album"),
                         "xesam:trackNumber": GLib.Variant.new_int16(song.trackNumber),
                         "xesam:discNumber": GLib.Variant.new_int16(song.discNumber),
                         "xesam:albumArtist": GLib.Variant.new_array(
@@ -295,6 +294,10 @@ export namespace Mpris {
                             ) ?? []
                         )
                     };
+
+                    if(song.album && song.album.title !== null)
+                        this.#Metadata["xesam:album"] = GLib.Variant.new_string(song.album.title);
+
                     if(image && image.cacheFile)
                         this.#Metadata["mpris:artUrl"] = GLib.Variant.new_string(`file://${image.cacheFile?.peek_path()}`);
 
