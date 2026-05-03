@@ -17,6 +17,7 @@ This is only a demonstration, some UI elements don't work as intended.
 - [x] Implement MPRIS
 - [ ] Play music through raw streams
 - [ ] Internationalization (i18n)
+- [ ] Rewrite in Rust (i really wanna do this some day)
 
 ## :hammer_and_wrench: Development
 This will guide you on how to develop for the Vibe Music Player.
