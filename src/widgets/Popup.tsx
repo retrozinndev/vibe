@@ -69,10 +69,6 @@ export class Popup extends Adw.Dialog {
         });
     }
 
-    vfunc_dispose(): void {
-        this.#scope.dispose();
-    }
-
     /** shortcut to AdwDialog.present(), shows the popup dialog */
     popup(): void {
         this.present(App.get_default().get_main_window());

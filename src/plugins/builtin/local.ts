@@ -14,6 +14,8 @@ export class PluginLocal extends Plugin {
     supportedFormats: Array<string> = [
         "m4a",
         "flac",
+        "aiff",
+        "alac",
         "ogg",
         "weba",
         "mp3"
@@ -33,7 +35,7 @@ export class PluginLocal extends Plugin {
             implements: {
                 recommendations: true,
                 search: true,
-                library: true
+                library: false
             }
         });
 
@@ -156,9 +158,9 @@ export class PluginLocal extends Plugin {
             }
         });
 
-        Vibe.getDefault().artists.filter(d => d.plugin === this).forEach(data => {
-            if(this.match(search, data.artist.displayName ?? data.artist.name ?? "Unnamed Artist")) 
-                results.artists.unshift(data.artist);
+        Vibe.getDefault().objects.find(d => d.plugin.id === this.id)!.artist.forEach(artist => {
+            if(this.match(search, artist.displayName ?? artist.name ?? "Unnamed Artist")) 
+                results.artists.unshift(artist);
         });
 
         return Object.keys(results).filter(key => 

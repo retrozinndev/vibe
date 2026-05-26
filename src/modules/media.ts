@@ -1,5 +1,6 @@
 import GLib from "gi://GLib?version=2.0";
 import Gst from "gi://Gst?version=1.0";
+import PluginHandler from "../plugins/plugin-handler";
 import { createRoot, getScope, Scope } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { Vibe } from "libvibe";
@@ -97,11 +98,6 @@ export default class Media extends GObject.Object implements VibeMedia {
     constructor() {
         super();
         Gst.init([]);
-    }
-
-    vfunc_dispose(): void {
-        this.#pipeline?.set_state(Gst.State.NULL);
-        this.#scope.dispose();
     }
 
     public static getDefault(): Media {
@@ -348,9 +344,9 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         }
 
         if(object instanceof Artist) {
-            const songs = Vibe.getDefault().songs.filter(d =>
-                d.song.artist.find(a => a.id === object!.id)
-            ).map(d => d.song);
+            const songs = Vibe.getDefault().objects.find(o =>
+                o.plugin.id === PluginHandler.getDefault().plugin.id
+            )?.song.filter(s => s.artist.includes(object));
 
             if(songs && songs.length > 0)
                 Vibe.getDefault().media.playList(
