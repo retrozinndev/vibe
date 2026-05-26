@@ -18,6 +18,9 @@
     "type": "git",
     "url": "git+https://github.com/retrozinndev/Vibe.git"
   },
+  "pnpm": {
+    "ignoredBuiltDependencies": ["esbuild"]
+  },
   "license": "BSD-3-Clause",
   "author": {
     "name": "João Dias",
