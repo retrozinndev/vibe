@@ -1,6 +1,6 @@
 import Gtk from "gi://Gtk?version=4.0";
 import Pango from "gi://Pango?version=1.0";
-import { createBinding, For } from "gnim";
+import { Accessor, createBinding, createComputed, For } from "gnim";
 import { getter, gtype, property, register } from "gnim/gobject";
 import {
     IconButton,
@@ -10,11 +10,12 @@ import {
     Vibe,
     Section as VibeSection
 } from "libvibe";
-import { Artist, Song, SongList } from "libvibe/objects";
+import { Album, Artist, Playlist, Song, SongList } from "libvibe/objects";
 import { omitObjectKeys } from "../modules/util";
 import { toBoolean } from "gnim-utils";
 import Card from "./Card";
 import Adw from "gi://Adw?version=1";
+import Media from "../modules/media";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -117,34 +118,33 @@ export default class Section extends Gtk.Box {
         );
     }
     
-    private genCards(items: Array<Artist|Song|SongList>): Array<Gtk.Widget> {
+    private genCards(items: Array<Artist|Album|Song|Playlist|SongList>): Array<Gtk.Widget> {
         return items.map(item => {
-            let widget!: Card;
-            if(item instanceof Song)
-                widget = Card.new_for_song(item, undefined, () => {
-                    Vibe.getDefault().addPage({
-                        content: item,
-                        title: item.title ?? "Untitled",
-                        buttons: item.artist.map(artist => ({
-                            label: `Go to ${artist.displayName ?? artist.name}`,
-                            iconName: "person-symbolic",
-                            onClicked: () => Vibe.getDefault().addPage({
-                                content: artist,
-                                title: artist.displayName ?? artist.name
-                            })
-                        }))
-                    })
-                });
-
-            else if(item instanceof Artist)
-                widget = Card.new_for_artist(item, undefined, () => Vibe.getDefault().addPage({
-                    content: item,
-                    title: item.displayName ?? item.name
-                }));
-
-            else if(item instanceof SongList)
-                widget = Card.new_for_songlist(item);
-
+            const widget: Card = <Card title={
+                item instanceof Artist ?
+                    createComputed(() =>
+                        createBinding(item, "displayName")() ?? 
+                            createBinding(item, "name")() ?? "Unknown Artist"
+                    )
+                : createBinding(item, "title") as Accessor<string>
+              }
+              description={
+                  item instanceof SongList ?
+                      createBinding(item, "description") as Accessor<string>
+                  : item instanceof Artist ?
+                      createComputed(() => createBinding(item, "name")() ?? "Unknown")
+                  : createBinding(item, "artist")(artist => artist.map(a =>
+                      a.displayName ?? a.name ?? "Unknown"
+                  ).join(", "))
+              }
+              buttons={[{
+                  iconName: "media-playback-start-symbolic",
+                  onClicked: () => Media.playObject(item)
+              }]}
+              onClicked={() => Vibe.getDefault().addPage({
+                  content: item
+              })}
+            /> as Card;
 
             widget?.add_css_class("card");
             widget.set_size_request(150, -1);

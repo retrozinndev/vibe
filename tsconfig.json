@@ -2,23 +2,16 @@
     "$schema": "https://json.schemastore.org/tsconfig.json",
     "compilerOptions": {
         "allowJs": false,
-        "checkJs": true,
-        "module": "es2022",
-        "target": "es2020",
         "lib": ["ES2024"],
         "moduleResolution": "bundler",
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "strict": true,
-        "outDir": "./build",
         "jsx": "react-jsx",
         "jsxImportSource": "gnim/gtk4",
         "types": [
+            "./.types/gi",
             "./env.d.ts"
         ]
-    },
-    "include": [
-        "./@types",
-        "./src/**/*.ts*"
-    ]
+    }
 }

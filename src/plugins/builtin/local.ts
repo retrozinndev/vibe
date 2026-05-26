@@ -37,11 +37,7 @@ export class PluginLocal extends Plugin {
             }
         });
 
-        // load songs from default directory (temporary, i'll make a way to configure it later)
-        const userMusicDir = GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_MUSIC) ??
-            `${GLib.get_home_dir()}/Music`;
-
-        this.#musicDir = Gio.File.new_for_path(`${userMusicDir}/Vibe/Local`);
+        this.#musicDir = Gio.File.new_for_path(GLib.get_user_special_dir(GLib.UserDirectory.DIRECTORY_MUSIC) ?? "~");
 
         if(!this.#musicDir.query_exists(null))
             this.#musicDir.make_directory_with_parents(null);
@@ -72,7 +68,7 @@ export class PluginLocal extends Plugin {
     /** recursively-add songs to library from a directory */
     private async addToLibrary(dir: Gio.File): Promise<void> {
         for(const file of (await this.recurse(dir))) {
-            if(!new RegExp(`\\.(${this.supportedFormats.join('|')})`).test(file.get_basename()!))
+            if(!new RegExp(`\\.(${this.supportedFormats.join('|')})$`).test(file.get_basename()!))
                 continue;
 
             const song = new Song({
@@ -92,12 +88,22 @@ export class PluginLocal extends Plugin {
             this.#promise ??= this.addToLibrary(this.#musicDir).finally(() => {
                 this.#scanned = true;
                 this.#promise = null;
+            }).catch((e: Error) => {
+                Vibe.getDefault().addDialog({
+                    title: "Scan Error",
+                    content: `An error occurred while scanning songs in the Music directory:\n${e.message}`
+                })
             });
+        }
 
-            try {
-                if(Boolean(this.#promise))
-                    await this.#promise;
-            } catch(_) {}
+        try {
+            if(this.#promise) 
+                await this.#promise;
+        } catch(e) {
+            Vibe.getDefault().addDialog({
+                title: "Scan Error",
+                content: `An error occurred while scanning songs in the Music directory:\n${(e as Error).message}`
+            });
         }
 
         return [

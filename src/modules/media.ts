@@ -2,8 +2,9 @@ import GLib from "gi://GLib?version=2.0";
 import Gst from "gi://Gst?version=1.0";
 import { createRoot, getScope, Scope } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
+import { Vibe } from "libvibe";
 import { Media as VibeMedia } from "libvibe/interfaces";
-import { Song, SongList, Queue } from "libvibe/objects";
+import { Song, SongList, Queue, Playlist, Artist, Album } from "libvibe/objects";
 
 
 /** play and control media from plugins */
@@ -79,19 +80,19 @@ export default class Media extends GObject.Object implements VibeMedia {
     shuffle: VibeMedia.ShuffleMode = VibeMedia.ShuffleMode.NONE;
 
     @signal(GObject.Object)
-    playing(_: Song) {}
+    protected playing(_: Song) {}
 
     @signal(GObject.Object)
-    paused(_: Song) {}
+    protected paused(_: Song) {}
 
     @signal(GObject.Object)
-    resumed(_: Song) {}
+    protected resumed(_: Song) {}
 
     @signal(GObject.Object, Number)
-    gonePrevious(_: Song, __: number) {}
+    protected gonePrevious(_: Song, __: number) {}
 
     @signal(GObject.Object, Number)
-    goneNext(_: Song, __: number) {}
+    protected goneNext(_: Song, __: number) {}
 
     constructor() {
         super();
@@ -233,6 +234,8 @@ export default class Media extends GObject.Object implements VibeMedia {
                 case Gst.MessageType.EOS:
                     this.#song = null;
                     this.notify("song");
+                    this.#status = VibeMedia.PlaybackStatus.STOPPED;
+                    this.notify("status");
 
                     break;
             }
@@ -336,5 +339,27 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         }
 
         return VibeMedia.PlaybackStatus.PLAYING;
+    }
+
+    public static playObject(object: Song|Artist|Album|Playlist|SongList): void {
+        if(object instanceof SongList) {
+            Vibe.getDefault().media.playList(object, 0);
+            return;
+        }
+
+        if(object instanceof Artist) {
+            const songs = Vibe.getDefault().songs.filter(d =>
+                d.song.artist.find(a => a.id === object!.id)
+            ).map(d => d.song);
+
+            if(songs && songs.length > 0)
+                Vibe.getDefault().media.playList(
+                    new SongList({ songs }), 0
+                );
+            return;
+        }
+
+        if(object instanceof Song)
+            Vibe.getDefault().media.playSong(object, 0);
     }
 }

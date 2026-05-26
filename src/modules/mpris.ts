@@ -13,7 +13,7 @@ import { Image } from "libvibe/utils";
 
 
 @iface("org.mpris.MediaPlayer2", { GTypeName: "VibeMpris" })
-export class Mpris extends Service {
+class Mpris extends Service {
     private static instance: Mpris|null;
     private static player: Mpris.Player|null;
 
@@ -75,7 +75,7 @@ export class Mpris extends Service {
     }
 }
 
-export namespace Mpris {
+namespace Mpris {
     export enum LoopMode {
         NONE = "None",
         TRACK = "Track",
@@ -384,3 +384,5 @@ export namespace Mpris {
         }
     }
 }
+
+export default Mpris;

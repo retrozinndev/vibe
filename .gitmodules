@@ -1,0 +1,3 @@
+[submodule "libvibe"]
+	path = libvibe
+	url = git@github.com:retrozinndev/libvibe.git

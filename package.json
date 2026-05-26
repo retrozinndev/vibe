@@ -12,32 +12,35 @@
     "gtk4",
     "libadwaita",
     "gnim",
-    "gir"
+    "gnomejs"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/retrozinndev/Vibe.git"
   },
   "license": "BSD-3-Clause",
-  "author": "retrozinndev",
+  "author": {
+    "name": "João Dias",
+    "url": "https://github.com/retrozinndev",
+    "email": "joaovodias@gmail.com"
+  },
   "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "types": "bash scripts/types.sh",
     "dev": "bash scripts/build.sh -d && bash scripts/start.sh",
+    "devshell": "bash",
     "build": "bash scripts/build.sh",
     "build:release": "bash scripts/release.sh",
-    "release": "bash scripts/release.sh",
     "start": "bash scripts/start.sh",
     "clean": "bash scripts/clean.sh"
   },
   "devDependencies": {
-    "esbuild": "^0.27.4",
-    "gnim": "^1.9.1",
-    "gnim-utils": "github:retrozinndev/gnim-utils",
-    "sass": "^1.98.0"
+    "esbuild": "^0.27.7",
+    "girgen": "^0.3.16"
   },
   "dependencies": {
-    "libvibe": "github:retrozinndev/libvibe"
+    "gnim": "^1.9.1",
+    "gnim-utils": "github:retrozinndev/gnim-utils",
+    "libvibe": "link:libvibe"
   }
 }

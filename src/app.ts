@@ -1,3 +1,4 @@
+import "./pkg";
 import { setConsoleLogDomain } from "console";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
@@ -12,11 +13,12 @@ import { programArgs, programInvocationName } from "system";
 import { getPages, getToastOverlay, createMainWindow, start } from "./Window";
 import Media from "./modules/media";
 import { Page } from "./widgets/Page";
+import { Page as VibePage } from "libvibe/interfaces";
 import { Dialog } from "./widgets/Dialog";
-import { Mpris } from "./modules/mpris";
+import Mpris from "./modules/mpris";
 
 
-@register({ GTypeName: "VibeApp" })
+@register({ GTypeName: "Vibe" })
 export class App extends Adw.Application {
     private static instance: App;
 
@@ -28,15 +30,14 @@ export class App extends Adw.Application {
     #decoder!: TextDecoder;
     #scope!: Scope;
 
+    get scope() { return this.#scope; }
     get license() { return this.#license; }
 
     vfunc_activate(): void {
-        super.vfunc_activate();
         createRoot(() => this.main());
     }
 
     vfunc_shutdown(): void {
-        super.vfunc_shutdown();
         this.#scope.dispose();
     }
 
@@ -87,6 +88,8 @@ export class App extends Adw.Application {
         });
 
         setConsoleLogDomain("Vibe");
+        GLib.set_application_name("Vibe");
+        GLib.set_prgname("vibe");
 
         try {
             this.#gresource = Gio.Resource.load(
@@ -136,7 +139,7 @@ export class App extends Adw.Application {
         vibe.setData(
             Media.getDefault(),
             getPages(),
-            Page as never, // typescript ahh
+            Page as new <T extends VibePage.Type>(props: VibePage.ConstructorProps<T>) => Page<T>,
             getToastOverlay()
         );
 
@@ -176,10 +179,6 @@ export class App extends Adw.Application {
 
     public get_main_window(): Adw.ApplicationWindow {
         return this.#mainWindow;
-    }
-
-    public getScope(): Scope {
-        return this.#scope;
     }
 }
 
