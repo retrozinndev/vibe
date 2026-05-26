@@ -19,7 +19,9 @@
     "url": "git+https://github.com/retrozinndev/Vibe.git"
   },
   "pnpm": {
-    "ignoredBuiltDependencies": ["esbuild"]
+    "ignoredBuiltDependencies": [
+      "esbuild"
+    ]
   },
   "license": "BSD-3-Clause",
   "author": {
@@ -39,7 +41,8 @@
   },
   "devDependencies": {
     "esbuild": "^0.27.7",
-    "girgen": "^0.3.16"
+    "girgen": "^0.3.16",
+    "sass": "^1.100.0"
   },
   "dependencies": {
     "gnim": "^1.9.1",
