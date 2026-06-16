@@ -2,16 +2,15 @@
     "$schema": "https://json.schemastore.org/tsconfig.json",
     "compilerOptions": {
         "allowJs": false,
-        "lib": ["ES2024"],
+        "lib": ["ES2025"],
         "moduleResolution": "bundler",
         "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true,
         "strict": true,
         "jsx": "react-jsx",
         "jsxImportSource": "gnim/gtk4",
-        "types": [
-            "./.types/gi",
-            "./env.d.ts"
-        ]
+        "noImplicitThis": true,
+        "useUnknownInCatchVariables": true,
+        "forceConsistentCasingInFileNames": true,
+        "types": ["./.types/gi"]
     }
 }
