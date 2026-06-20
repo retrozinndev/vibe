@@ -6,7 +6,7 @@ Package.init({
     prefix: "/usr",
     datadir: "/share",
     libdir: "/lib",
-    version: VIBE_VERSION
+    version: VERSION
 });
 
 Package.require({

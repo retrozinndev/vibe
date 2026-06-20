@@ -82,7 +82,7 @@ export class App extends Adw.Application {
 
     constructor() {
         super({
-            version: VIBE_VERSION,
+            version: VERSION,
             applicationId: "io.github.retrozinndev.Vibe",
             flags: Gio.ApplicationFlags.DEFAULT_FLAGS 
         });
@@ -93,7 +93,7 @@ export class App extends Adw.Application {
 
         try {
             this.#gresource = Gio.Resource.load(
-                GRESOURCES_FILE.split('/').filter(s => 
+                GRESOURCE.split('/').filter(s => 
                     s !== ""
                 ).map(path => {
                     // support environment variables at runtime

@@ -32,10 +32,9 @@
   "type": "module",
   "scripts": {
     "types": "bash scripts/types.sh",
-    "dev": "bash scripts/build.sh -d && bash scripts/start.sh",
-    "devshell": "bash",
+    "dev": "bash scripts/build.sh && bash scripts/start.sh",
     "build": "bash scripts/build.sh",
-    "build:release": "bash scripts/release.sh",
+    "build:release": "bash scripts/build.sh -r",
     "start": "bash scripts/start.sh",
     "clean": "bash scripts/clean.sh"
   },

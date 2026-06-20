@@ -1,95 +1,96 @@
 set -e
 
+skip_gresource=
+gresource_target=
 output="./build"
-esbuild="esbuild"
+is_devel=true
+version=`cat package.json | jq -r .version`
+head=`command -v git 2>&1 > /dev/null && git rev-parse HEAD || echo $version`
+udate=`date +%s`
+appname="vibe"
+appid="io.github.retrozinndev.Vibe"
+entryfile=src/app.ts
+srcroot=src
 
-while getopts r:o:e:c:m:bdh args; do
-    case "$args" in
-        r) 
-            gresources_target=${OPTARG}
+while getopts :g:o:rhj arg; do
+    case "$arg" in
+        g)
+            gresource_target=${OPTARG}
             ;;
-        b) 
-            keep_gresource=true
+        j)
+            skip_gresource=true
             ;;
         o)
             output=${OPTARG}
             ;;
-        e)
-            esbuild=${OPTARG}
+        r)
+            unset is_devel
+            output="./build/release"
+            socket_support=true
             ;;
-        d)
-            is_devel=true
-            ;;
-        m)
-            write_meta=true
-            ;;
-        h)
+        h | ?)
             echo "\
-Vibe's build script. 
-Please use \`build:release\` for release builds.
+$appname's build script. 
+use the \"-r\" flag for release builds.
 
-Options: 
-  -r \$file: specify gresource's target path (default: \`\$output/resources.gresource\`)
-  -o \$path: specify the build's output directory (default: \`./build\`)
-  -e \$exec: specify where's the esbuild binary (default: \`esbuild\`)
-  -b: only target gresource in the build, keeping the file in the output dir
-  -m: also write dependency metadata json to output
-  -d: enable developer mode in the build
+options: 
+  -g \$file: tell $appname which path to search for the gresource (default: \`./build/gresource\`)
+  -o \$path: build output directory (where build output is stored. default: \`./build\`)
+  -j: skip gresource compiling step (useful for nix)
+  -r: make a release build
   -h: show this help message"
             exit 0
             ;;
     esac
 done
 
-bash ./scripts/clean.sh
-mkdir -p $output
+gresource_target=${gresource_target:-"$output/gresource"}
 
-# -> Bundle
-echo "[info] bundling project"
-$esbuild --bundle ./src/app.ts \
-    --outfile=$output/vibe.js \
-    --source-root=./src \
-    --sourcemap=inline \
-    --format="esm" \
-    --target=firefox128 \
-    --external:"gi://*" \
-    --external:"resource://*" \
-    --external:"console" \
-    --external:"system" \
-    --external:"gettext" \
-    --define:"DEVEL=`[[ $is_devel ]] && echo -n true || echo -n false`" \
-    --define:"VIBE_VERSION='`cat package.json | jq -r .version`'" \
-    --define:"GRESOURCES_FILE='${gresources_target:-"$output/resources.gresource"}'" \
-    `[[ $write_meta ]] && echo -n "--metafile=$output/meta.json"` 
+if [[ -d $output ]] && [[ ! -z `ls -A -w1 $output` ]]; then
+    echo "[info] cleaning up"
+    rm -r $output/*
+else
+    mkdir -p $output
+fi
 
-_rawjs=`echo "#!/usr/bin/gjs -m" | cat - $output/vibe.js`
-echo "$_rawjs" > $output/vibe.js
+echo "[info] bundling"
+{
+    echo -e "#!/usr/bin/gjs -m\n"
+    esbuild --bundle $entryfile \
+      --source-root=$srcroot \
+      --sourcemap=inline \
+      --format="esm" \
+      --target=firefox128 \
+      --external:"gi://*" \
+      --external:"resource://*" \
+      --external:"console" \
+      --external:"system" \
+      --external:"gettext" \
+      --define:"DEVEL=${is_devel:-"false"}" \
+      --define:"VERSION='$version'" \
+      --define:"GRESOURCE='$gresource_target'" \
+      --define:"BUILD_DATE=$udate" \
+      --define:"HEAD='$head'"
 
-# -> Sass (stylesheet)
-echo "[info] compiling sass in \`./build/resources/style.css\`"
-sass --no-source-map -I ./data/styles data/styles/style.scss ./build/resources/style.css
+} > $output/$appname.js
+sass data/styles/* $output/style.css
 
-# -> GResource
-echo "[info] compiling gresource"
-gres_target=`[[ "$keep_gresource" ]] && echo -n "$output/resources.gresource" || \
-    echo -n "${gresources_target:-"$output/resources.gresource"}"`
-[ ! "$keep_gresource" ] && mkdir -p `dirname "$gres_target"`
-glib-compile-resources resources.gresource.xml \
-    --sourcedir . \
-    --target "$gres_target"
+if [[ -z $skip_gresource ]]; then
+    echo "[info] compiling gresource"
+    glib-compile-resources data/$appid.gresource.xml \
+        --sourcedir ./data \
+        --target $output/gresource
+fi
 
-# -> Compile
 echo "[info] creating executable"
 echo -en "\
 #!/usr/bin/bash
 
-runtime_dir=\${XDG_RUNTIME_DIR:-\"/run/user/\$(id -u)\"}/vibe
-file=\"\$runtime_dir/vibe\"
+mkdir -p \"\$XDG_RUNTIME_DIR/$appname\"
+echo -n '`cat $output/$appname.js | base64`' | base64 --decode > \"\$XDG_RUNTIME_DIR/$appname/$appname\"
+chmod +x "\$XDG_RUNTIME_DIR/$appname/$appname"
 
-mkdir -p \"\$runtime_dir\"
+exec \$XDG_RUNTIME_DIR/$appname/$appname \$@
+" > $output/$appname
+chmod +x $output/$appname
 
-echo -n '`cat $output/vibe.js | base64`' | base64 --decode > \"\$file\"
-chmod +x "\$file"
-exec \"\$file\"
-" > $output/vibe
-chmod +x $output/vibe
