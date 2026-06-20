@@ -34,10 +34,10 @@ jobs:
         run: |
           sudo apt update -y
           sudo apt install -y --fix-broken libglib2.0-dev gobject-introspection libgirepository1.0-dev build-essential gjs
-          pnpm install --dangerously-allow-all-builds
+          pnpm install
 
       - name: "Build project"
-        run: "pnpm build -d -b -r \"./resources.gresource\" -e \"pnpm dlx esbuild\""
+        run: "pnpm build -rg ./gresource"
 
       - name: "Upload"
         uses: "actions/upload-artifact@v5"
