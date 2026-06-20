@@ -25,7 +25,6 @@ while getopts :g:o:rhj arg; do
             ;;
         r)
             unset is_devel
-            output="./build/release"
             socket_support=true
             ;;
         h | ?)
