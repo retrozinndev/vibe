@@ -7,7 +7,7 @@ export default () => {
 
     dialog.set_application_name("Vibe");
     dialog.set_application_icon("folder-music-symbolic");
-    dialog.set_version(App.get_default().version);
+    dialog.set_version(App.get_default().version!);
     dialog.set_license(App.get_default().license);
     dialog.set_developer_name("retrozinndev");
     dialog.set_developers(["João Dias"]);

@@ -30,7 +30,7 @@ export class Search extends Page {
                 PluginHandler.getDefault(), "plugin", "prettyName"
             )(name => `Search on ${name}...`)
           } widthRequest={600} halign={Gtk.Align.CENTER} searchDelay={300}
-          onSearchChanged={(self) => this.reload(self, sectionList, stack)}
+          onSearchChanged={(self: Gtk.SearchEntry) => this.reload(self, sectionList, stack)}
         /> as Gtk.SearchEntry;
 
         const sectionList = <Gtk.ListBox selectionMode={Gtk.SelectionMode.NONE} 

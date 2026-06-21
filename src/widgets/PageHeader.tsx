@@ -1,6 +1,7 @@
 import Gtk from "gi://Gtk?version=4.0";
+import GObject from "gi://GObject?version=2.0";
 import { omitObjectKeys } from "../modules/util";
-import GObject, { gtype, property, register } from "gnim/gobject";
+import { gtype, property, register } from "gnim/gobject";
 import { IconButton, isLabelButton, LabelButton, DetailedButton, isDetailedButton } from "libvibe";
 import { toBoolean } from "gnim-utils";
 import { Accessor, createBinding, For } from "gnim";
@@ -12,6 +13,8 @@ import Adw from "gi://Adw?version=1";
 
 @register({ GTypeName: "VibePageHeader" })
 export class PageHeader extends Gtk.Box {
+    declare readonly $signals: PageHeader.SignalSignatures;
+    declare readonly $readWriteProperties: PageHeader.ReadWriteProperties;
 
     @property(gtype<string|null>(String))
     title: string|null = null;
@@ -26,7 +29,7 @@ export class PageHeader extends Gtk.Box {
     buttons: Array<IconButton|LabelButton|DetailedButton> = [];
 
 
-    constructor(props: Partial<PageHeader.ConstructorProps>) {
+    constructor(props: Partial<GObject.ConstructorProps<PageHeader>>) {
         super(omitObjectKeys(props, [
             "image",
             "title",
@@ -105,11 +108,17 @@ export class PageHeader extends Gtk.Box {
 
 
 export namespace PageHeader {
-    export interface SignalSignatures extends Gtk.Box.SignalSignatures {}
-    export interface ConstructorProps extends Gtk.Box.ConstructorProps {
+    export interface SignalSignatures extends Gtk.Box.SignalSignatures {
+        "notify::title"(): void;
+        "notify::image"(): void;
+        "notify::description"(): void;
+        "notify::buttons"(): void;
+    }
+
+    export interface ReadWriteProperties extends Gtk.Box.ReadWriteProperties {
         title: string;
         image: VibeImage|null;
         description: string;
-        buttons: Array<IconButton|LabelButton|(IconButton&LabelButton)>;
+        buttons: Array<IconButton|LabelButton|DetailedButton>;
     }
 }

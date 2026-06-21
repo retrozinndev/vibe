@@ -1,5 +1,6 @@
 import Gtk from "gi://Gtk?version=4.0";
-import GObject, { getter, gtype, property, register, signal } from "gnim/gobject";
+import GObject from "gi://GObject?version=2.0";
+import { getter, gtype, property, register, signal } from "gnim/gobject";
 import { omitObjectKeys } from "../modules/util";
 import { DetailedButton, LabelButton } from "libvibe";
 import { Menu as VibeMenu } from "libvibe/interfaces";
@@ -10,14 +11,18 @@ import Gdk from "gi://Gdk?version=4.0";
 
 @register({ GTypeName: "VibePopoverMenu" })
 export class Menu extends Gtk.Popover implements VibeMenu {
-    declare $signals: Menu.SignalSignatures;
+    declare readonly $signals: Menu.SignalSignatures;
+    declare readonly $readableProperties: Menu.ReadableProperties;
+    declare readonly $readWriteProperties: Menu.ReadWriteProperties;
+    declare readonly $constructOnlyProperties: Menu.ConstructOnlyProperties;
+
     #buttons: Array<Menu.Button> = [];
 
-    @signal(Object)
-    added(_: Menu.Button) {}
+    @signal(Object, Number)
+    added(_button: Menu.Button, _i: number) {}
 
-    @signal(Object)
-    removed(_: Menu.Button) {}
+    @signal(Object, Number)
+    removed(_button: Menu.Button, _i: number) {}
 
     @getter(Number)
     get length() { return this.#buttons.length; }
@@ -31,7 +36,7 @@ export class Menu extends Gtk.Popover implements VibeMenu {
     closeOnSelect: boolean = true;
 
 
-    constructor(props: Partial<Menu.ConstructorProps>) {
+    constructor(props: Partial<GObject.ConstructorProps<Menu>>) {
         super({
             autohide: false,
             ...omitObjectKeys(props, [
@@ -55,10 +60,11 @@ export class Menu extends Gtk.Popover implements VibeMenu {
 
         const click = Gtk.GestureClick.new();
         const idClick = click.connect("released", (g, gx, gy) => {
-            const { x, y, width, height } = this.get_allocation();
-            if(g.button !== Gdk.BUTTON_PRIMARY || 
-              (gx >= x && gx <= (x+width) || (gy >= y && gy <= (y+height)))
-            ) {
+            const bounds = this.compute_bounds(this.get_parent()!)[1];
+            if(g.button !== Gdk.BUTTON_PRIMARY || (
+              gx >= bounds.get_x() && gx <= (bounds.get_x()+bounds.get_width()) || 
+               (gy >= bounds.get_y() && gy <= (bounds.get_y()+bounds.get_height()))
+            )) {
                 return;
             }
 
@@ -84,7 +90,7 @@ export class Menu extends Gtk.Popover implements VibeMenu {
                       Gtk.SelectionMode.MULTIPLE
                   : Gtk.SelectionMode.SINGLE
               )} activateOnSingleClick
-              onRowSelected={(listbox, row) => {
+              onRowSelected={(listbox: Gtk.ListBox, row: Gtk.ListBoxRow) => {
                   row?.activate(); // activate row on selection
                   if(this.mode !== Menu.Mode.NORMAL && row instanceof MenuItem) {
                       const selectedRow = listbox.get_selected_row() as MenuItem|null;
@@ -126,7 +132,7 @@ export class Menu extends Gtk.Popover implements VibeMenu {
         if(index < 0)
             return false;
 
-        this.#buttons.splice(index, 1);
+        (this as Menu).emit("removed", this.#buttons.splice(index, 1)[0], index);
         return true;
     }
 
@@ -135,6 +141,7 @@ export class Menu extends Gtk.Popover implements VibeMenu {
             button.id = this.genID().next().value;
         
         this.#buttons.push(button);
+        (this as Menu).emit("added", button, this.length-1);
         return button.id!;
     }
 
@@ -143,6 +150,7 @@ export class Menu extends Gtk.Popover implements VibeMenu {
             button.id = this.genID().next().value;
 
         this.#buttons.unshift(button);
+        (this as Menu).emit("added", button, 0);
         return button.id!;
     }
 
@@ -153,23 +161,8 @@ export class Menu extends Gtk.Popover implements VibeMenu {
     protected *genID(): Generator<unknown, number, number> {
         let last: number = -1;
 
-        while(true) {
+        while(true)
             yield last++;
-        }
-    }
-
-    connect<
-        S extends keyof Menu.SignalSignatures,
-        C extends Menu.SignalSignatures[S]
-    >(signal: S, callback: (self: Menu, ...params: Parameters<C>) => ReturnType<C>): number {
-        return super.connect(signal, callback);
-    }
-
-    emit<
-        S extends keyof Menu.SignalSignatures,
-        P extends Parameters<Menu.SignalSignatures[S]>
-    >(signal: S, ...args: P): void {
-        super.emit(signal, ...args);
     }
 }
 
@@ -189,9 +182,10 @@ export namespace Menu {
         "notify::mode": (spec: GObject.ParamSpec<number>) => void;
     };
 
-    export type ConstructorProps = Gtk.Popover.ConstructorProps & VibeMenu.ConstructorProps & {
-        buttons: Array<Menu.Button>;
-        mode: Menu.Mode;
-        closeOnSelect: boolean;
+    export type ReadableProperties = Gtk.Popover.ReadableProperties & VibeMenu.ReadableProperties;
+    export type ConstructOnlyProperties = Gtk.Popover.ConstructOnlyProperties & VibeMenu.ConstructOnlyProperties;
+    export interface ReadWriteProperties extends Gtk.Popover.ReadWriteProperties {
+        "mode": Menu.Mode;
+        "close-on-select": boolean;
     }
 }

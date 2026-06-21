@@ -16,7 +16,7 @@ export class Home extends Page {
     constructor() {
         super({
             id: "home",
-            title: "Recommendations",
+            title: "For You",
             tabName: "Home",
             iconName: "go-home-symbolic",
             content: <Gtk.Stack transitionType={Gtk.StackTransitionType.CROSSFADE} /> as Gtk.Stack

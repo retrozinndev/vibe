@@ -41,7 +41,10 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
       }}
     /> as Pages;
 
-    createScopedConnection(mainWindow, "close-request", () => dispose());
+    createScopedConnection(mainWindow, "close-request", () => {
+        dispose();
+        return false;
+    });
 
     mainWindow.set_content(
         <Gtk.Box class={"container"} orientation={Gtk.Orientation.VERTICAL}>

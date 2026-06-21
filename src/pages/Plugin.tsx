@@ -1,5 +1,4 @@
 import { Page } from "../widgets/Page";
-import Tab from "../widgets/Tab";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, For } from "gnim";
 import PluginHandler from "../plugins/plugin-handler";
@@ -11,11 +10,10 @@ import { register } from "gnim/gobject";
 @register({ GTypeName: "VibePluginPage" })
 export class PluginPage extends Page {
 
-    constructor(tab: Tab) {
+    constructor() {
         super({
             title: "Your plugins",
             id: "plugins",
-            tab,
             content: <Gtk.Box orientation={Gtk.Orientation.VERTICAL}>
                 <Gtk.Label class={"title-1"} label={"Plugins"} xalign={0} />
                 <Gtk.FlowBox homogeneous={false} hexpand={false}>

@@ -1,4 +1,5 @@
 import Gtk from "gi://Gtk?version=4.0";
+import GObject from "gi://GObject?version=2.0";
 import { gtype, property, register } from "gnim/gobject";
 import { omitObjectKeys } from "../modules/util";
 import { createBinding } from "gnim";
@@ -6,6 +7,9 @@ import { createBinding } from "gnim";
 
 @register({ GTypeName: "VibeMenuItem" })
 export class MenuItem extends Gtk.ListBoxRow {
+    declare readonly $signals: MenuItem.SignalSignatures;
+    declare readonly $readWriteProperties: MenuItem.ReadWriteProperties;
+
     @property(Boolean)
     selected: boolean = false;
 
@@ -16,7 +20,7 @@ export class MenuItem extends Gtk.ListBoxRow {
     iconName: string|null = null;
 
 
-    constructor(props: Partial<MenuItem.ConstructorProps>) {
+    constructor(props: Partial<GObject.ConstructorProps<MenuItem>>) {
         super(omitObjectKeys(props, [
             "selected",
             "label",
@@ -47,9 +51,15 @@ export class MenuItem extends Gtk.ListBoxRow {
 }
 
 export namespace MenuItem {
-    export interface ConstructorProps extends Gtk.ListBoxRow.ConstructorProps {
-        selected: boolean;
-        label: string;
-        iconName: string|null;
+    export interface SignalSignatures extends Gtk.ListBoxRow.SignalSignatures {
+        "notify::selected"(): void;
+        "notify::label"(): void;
+        "notify::icon-name"(): void;
+    }
+
+    export interface ReadWriteProperties extends Gtk.ListBoxRow.ReadWriteProperties {
+        "selected": boolean;
+        "label": string;
+        "icon-name": string|null;
     }
 }

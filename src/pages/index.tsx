@@ -1,12 +1,15 @@
 import Gtk from "gi://Gtk?version=4.0";
-import GObject, { getter, gtype, property, register, signal } from "gnim/gobject";
+import GObject from "gi://GObject?version=2.0";
+import { getter, gtype, property, register, signal } from "gnim/gobject";
 import { Page, Pages as VibePages } from "libvibe/interfaces";
 import { Page as PageWidget } from "../widgets/Page";
 
 
 @register({ GTypeName: "VibePagesWidget" })
 export class Pages extends Gtk.Stack implements VibePages {
-    declare $signals: VibePages.SignalSignatures;
+    declare readonly $signals: VibePages.SignalSignatures;
+    declare readonly $readableProperties: VibePages.ReadableProperties;
+    declare readonly $readWriteProperties: VibePages.ReadWriteProperties;
 
     #connections: Array<number> = [];
     #statics: Array<Page> = [];
@@ -39,7 +42,7 @@ export class Pages extends Gtk.Stack implements VibePages {
         : this.#statics[0];
         this.add_named(page, name);
         this.set_visible_child_full(name, Gtk.StackTransitionType.SLIDE_LEFT);
-        this.notify("can-go-back");
+        (this as Pages).notify("can-go-back");
     }
 
     @signal(gtype<Page>(GObject.Object))
@@ -53,22 +56,22 @@ export class Pages extends Gtk.Stack implements VibePages {
             Gtk.StackTransitionType.SLIDE_LEFT_RIGHT
         );
 
-        this.notify("can-go-back");
+        (this as Pages).notify("can-go-back");
     }
 
 
-    constructor(props: Partial<Gtk.Stack.ConstructorProps>) {
+    constructor(props: Partial<GObject.ConstructorProps<Pages>>) {
         super({
             cssName: "pages",
             ...props
         });
 
         this.#connections.push(
-            this.connect("notify::visible-child", () => {
+            (this as Pages).connect("notify::visible-child", () => {
                 const child = this.get_visible_child() as Gtk.StackPage|null;
 
                 this.#currentPage = child as Page|null;
-                this.notify("current-page");
+                (this as Pages).notify("current-page");
 
                 const isCurrentPageStatic = this.#currentPage && 
                     Boolean(this.#statics.find(p => p.id === this.#currentPage!.id));
@@ -76,9 +79,9 @@ export class Pages extends Gtk.Stack implements VibePages {
                 if(isCurrentPageStatic)
                     this.#history.splice(0, this.#history.length).forEach(p => this.remove(p));
 
-                this.notify("can-go-back");
+                (this as Pages).notify("can-go-back");
             }),
-            this.connect("destroy", () => this.#connections.forEach(id =>
+            (this as Pages).connect("destroy", () => this.#connections.forEach(id =>
                 this.disconnect(id)
             ))
         );
@@ -94,14 +97,14 @@ export class Pages extends Gtk.Stack implements VibePages {
             if(p.id === page.id) {
                 this.#currentPage = page as Page;
                 this.set_visible_child_name(String(this.#currentPage.id));
-                this.notify("current-page");
+                (this as Pages).notify("current-page");
 
                 // remove pages that came after the previously-added page
                 this.#history.splice(i, this.#history.length).forEach(p => 
                     this.remove(p)
                 );
-                this.notify("history");
-                this.notify("can-go-back");
+                (this as Pages).notify("history");
+                (this as Pages).notify("can-go-back");
                 console.log(this.#history.map(p => p.id))
                 return;
             }
@@ -109,13 +112,13 @@ export class Pages extends Gtk.Stack implements VibePages {
 
         if(this.#currentPage && !this.isStatic(this.#currentPage)) {
             this.#history.push(this.#currentPage);
-            this.notify("history");
-            this.notify("can-go-back");
+            (this as Pages).notify("history");
+            (this as Pages).notify("can-go-back");
         }
 
         this.#currentPage = page as Page;
-        this.notify("current-page");
-        this.emit("added", page);
+        (this as Pages).notify("current-page");
+        (this as Pages).emit("added", page);
     }
 
     /** @returns true if the provided `page` is a static page */
@@ -130,16 +133,16 @@ export class Pages extends Gtk.Stack implements VibePages {
         this.#statics.push(page);
         if(!this.#currentPage) {
             this.#currentPage = page;
-            this.notify("current-page");
+            (this as Pages).notify("current-page");
             this.lastStaticPage = page;
         }
 
-        this.notify("static-pages");
+        (this as Pages).notify("static-pages");
     }
 
     remove(child: Gtk.Widget): void {
         if(child instanceof PageWidget) 
-            this.emit("removed", child);
+            (this as Pages).emit("removed", child);
 
         super.remove(child);
     }
@@ -155,11 +158,11 @@ export class Pages extends Gtk.Stack implements VibePages {
         }
 
         const removed = this.#history.splice(this.#history.length-1, 1)[0] ?? this.#currentPage;
-        this.notify("history");
-        this.notify("can-go-back");
+        (this as Pages).notify("history");
+        (this as Pages).notify("can-go-back");
 
         this.#currentPage = this.#history[this.#history.length-1] ?? this.lastStaticPage;
-        this.notify("current-page");
+        (this as Pages).notify("current-page");
         this.remove(removed);
     }
 }

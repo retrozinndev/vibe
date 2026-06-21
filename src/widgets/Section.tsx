@@ -1,8 +1,10 @@
 import Gtk from "gi://Gtk?version=4.0";
 import Pango from "gi://Pango?version=1.0";
+import GObject from "gi://GObject?version=2.0";
 import { Accessor, createBinding, createComputed, For } from "gnim";
 import { getter, gtype, property, register } from "gnim/gobject";
 import {
+    DetailedButton,
     IconButton,
     isIconButton,
     isLabelButton,
@@ -20,6 +22,10 @@ import Media from "../modules/media";
 
 @register({ GTypeName: "VibeSection" })
 export default class Section extends Gtk.Box {
+    declare readonly $signals: Section.SignalSignatures;
+    declare readonly $readableProperties: Section.ReadableProperties;
+    declare readonly $readWriteProperties: Section.ReadWriteProperties;
+
     #content: Array<Song|SongList|Artist> = [];
     #type: NonNullable<VibeSection["type"]> = "row";
 
@@ -42,7 +48,7 @@ export default class Section extends Gtk.Box {
     endButton: IconButton|LabelButton|null = null;
 
 
-    constructor(props: VibeSection & Partial<Gtk.Box.ConstructorProps>) {
+    constructor(props: VibeSection & Partial<GObject.ConstructorProps<Section>>) {
         super({
             cssName: "section",
             ...omitObjectKeys(props, [
@@ -118,7 +124,7 @@ export default class Section extends Gtk.Box {
         );
     }
     
-    private genCards(items: Array<Artist|Album|Song|Playlist|SongList>): Array<Gtk.Widget> {
+    private genCards(items: Array<Artist|Album|Song|SongList|Playlist>): Array<Gtk.Widget> {
         return items.map(item => {
             const widget: Card = <Card title={
                 item instanceof Artist ?
@@ -150,5 +156,26 @@ export default class Section extends Gtk.Box {
             widget.set_size_request(150, -1);
             return widget;
         });
+    }
+}
+
+export namespace Section {
+    export interface SignalSignatures extends Gtk.Box.SignalSignatures {
+        "notify::type"(): void;
+        "notify::content"(): void;
+        "notify::title"(): void;
+        "notify::description"(): void;
+        "notify::header-buttons"(): void;
+        "notify::end-button"(): void;
+    }
+    export interface ReadableProperties extends Gtk.Box.ReadableProperties {
+        "type": NonNullable<VibeSection["type"]>;
+        "content": NonNullable<VibeSection["content"]>;
+    }
+    export interface ReadWriteProperties extends Gtk.Box.ReadWriteProperties {
+        "title": string;
+        "description": string|null;
+        "header-buttons": Array<LabelButton|IconButton|DetailedButton>;
+        "end-button": LabelButton|IconButton|DetailedButton;
     }
 }

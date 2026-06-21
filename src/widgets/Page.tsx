@@ -14,7 +14,10 @@ import { Image } from "libvibe/utils";
 
 @register({ GTypeName: "VibePage" })
 export class Page<T extends VibePage.Type = Gtk.Widget> extends Adw.Bin implements VibePage<T> {
-    declare $signals: VibePage.SignalSignatures;
+    declare readonly $signals: VibePage.SignalSignatures;
+    declare readonly $readableProperties: VibePage.ReadableProperties;
+    declare readonly $readWriteProperties: VibePage.ReadWriteProperties;
+    declare readonly $constructOnlyProperties: VibePage.ConstructOnlyProperties;
 
     readonly id: any;
 

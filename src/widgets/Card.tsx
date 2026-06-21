@@ -1,7 +1,8 @@
 import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
+import GObject from "gi://GObject?version=2.0";
 import { Accessor, createBinding, For } from "gnim";
-import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
+import { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { IconButton, isIconButton, LabelButton, Vibe } from "libvibe";
 import { omitObjectKeys } from "../modules/util";
 import { createScopedConnection, toBoolean } from "gnim-utils";
@@ -12,6 +13,7 @@ import { Menu } from "./Menu";
 import { Image } from "./Image";
 import Media from "../modules/media";
 import { App } from "../app";
+import Graphene from "gi://Graphene?version=1.0";
 
 
 /** A nice widget with a card view, containing an image(optional), 
@@ -20,28 +22,17 @@ import { App } from "../app";
 */
 @register({ GTypeName: "VibeCard" })
 class Card extends Gtk.Box {
-    declare $signals: Card.SignalSignatures;
+    declare readonly $signals: Card.SignalSignatures;
+    declare readonly $readWriteProperties: Card.ReadWriteProperties;
 
     /** signal ::clicked, emitted when the user clicks in the card(not in the buttons) */
     @signal(Number, Number) clicked(_: number, __: number) {}
 
     /** signal ::menu-request, emitted when the secondary menu is triggered by a secondary click */
-    @signal(Number, Number) menuRequest(xx: number, yy: number) {
+    @signal(Number, Number) menuRequest(_x: number, _y: number) {
         if(!this.menu)
             return;
 
-        /* TODO: fix this thing
-        const [, { x, y }] = this.compute_point(
-            App.get_default().get_main_window(),
-            new Graphene.Point({ x: xx, y: yy })
-        );
-
-        this.menu.set_pointing_to(new Gdk.Rectangle({
-            x, y,
-            width: this.get_allocated_width(),
-            height: this.get_allocated_height()
-        }));
-        */
         this.menu.popup();
     }
 
@@ -85,7 +76,7 @@ class Card extends Gtk.Box {
         }
 
         this.#menu = newValue;
-        this.notify("menu");
+        (this as Card).notify("menu");
 
         this.#menu &&
             this.append(this.#menu);
@@ -96,11 +87,12 @@ class Card extends Gtk.Box {
     buttonAlign: Gtk.Align = Gtk.Align.CENTER;
 
 
-    constructor(props: Partial<Card.ConstructorProps>) {
+    constructor(props: Partial<GObject.ConstructorProps<Card>>) {
         super({
             cssName: "card",
             ...omitObjectKeys(props, [
                 "title",
+                "buttonAlign",
                 "description",
                 "image",
                 "menu",
@@ -117,18 +109,18 @@ class Card extends Gtk.Box {
         
         createScopedConnection(
             clickPrimary, "released", (_, xx, yy) => {
-                const [, x, y] = this.translate_coordinates(
+                const { x, y } = this.compute_point(
                     App.get_default().get_main_window(),
-                    xx, yy
-                );
+                    new Graphene.Point({ x: xx, y: yy })
+                )[1];
 
-                this.emit("clicked", x, y);
+                (this as Card).emit("clicked", x, y);
             }
         );
 
         createScopedConnection(
             clickSecondary, "released", (_, x, y) => {
-                this.emit("menu-request", x, y);
+                (this as Card).emit("menu-request", x, y);
 
                 // emit menu-request for plugin
                 if(this.object && this.object.plugin && this.#menu) {
@@ -197,7 +189,7 @@ class Card extends Gtk.Box {
                           } label={!isIconButton(button) ?
                             button.label : undefined
                           } onClicked={() => {
-                              this.emit("button-clicked", button);
+                              (this as Card).emit("button-clicked", button);
                               button.onClicked?.();
                           }} class={"flat"}
                         />
@@ -207,41 +199,27 @@ class Card extends Gtk.Box {
         );
     }
 
-    emit<
-        Signal extends keyof typeof this.$signals,
-        Args extends Parameters<(typeof this.$signals)[Signal]>
-    >(signal: Signal, ...args: Args): void {
-        super.emit(signal, ...args);
-    }
-
-    connect<
-        Signal extends keyof typeof this.$signals,
-        Callback extends (typeof this.$signals)[Signal]
-    >(signal: Signal, callback: Callback): number {
-        return super.connect(signal, callback);
-    }
 }
 
 namespace Card {
     export interface SignalSignatures extends Gtk.Box.SignalSignatures {
-        "clicked": (x: number, y: number) => void;
-        "menu-request": (x: number, y: number) => void;
-        "button-clicked": (button: IconButton|LabelButton) => void;
-        "notify::title": () => void;
-        "notify::description": () => void;
-        "notify::image": () => void;
-        "notify::buttons": () => void;
+        "clicked"(x: number, y: number): void;
+        "menu-request"(x: number, y: number): void;
+        "button-clicked"(button: IconButton|LabelButton): void;
+        "notify::title"(): void;
+        "notify::description"(): void;
+        "notify::image"(): void;
+        "notify::buttons"(): void;
     }
 
-    export interface ConstructorProps extends Gtk.Box.ConstructorProps {
-        title: string;
-        description: string;
-        image: VibeImage;
-        buttonAlign: Gtk.Align;
-        imageHeight: number;
-        object: Song|Album|Artist|Playlist|SongList;
-        menu: Menu;
-        buttons: Array<IconButton | LabelButton>;
+    export interface ReadWriteProperties extends Gtk.Box.ReadWriteProperties {
+        "title": string;
+        "description": string;
+        "image": VibeImage;
+        "button-align": Gtk.Align;
+        "object": Song|Album|Artist|Playlist|SongList;
+        "menu": Menu;
+        "buttons": Array<IconButton | LabelButton>;
     };
 }
 

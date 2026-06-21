@@ -1,12 +1,16 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import GObject, { getter, gtype, register, setter } from "gnim/gobject";
+import GObject from "gi://GObject?version=2.0";
+import { getter, gtype, register, setter } from "gnim/gobject";
 import { Dialog as VibeDialog } from "libvibe/interfaces";
 import { omitObjectKeys } from "../modules/util";
 
 
 @register({ GTypeName: "VibeDialog" })
 export class Dialog extends Adw.Dialog implements VibeDialog {
+    declare readonly $readWriteProperties: Dialog.ReadWriteProperties;
+    declare readonly $signals: Dialog.SignalSignatures;
+    declare readonly $constructOnlyProperties: Dialog.ConstructOnlyProperties;
 
     #childBin: Adw.Bin;
     #content: string|Gtk.Widget|null = null;
@@ -38,7 +42,7 @@ export class Dialog extends Adw.Dialog implements VibeDialog {
     }
 
 
-    constructor(props: Partial<Dialog.ConstructorProps>) {
+    constructor(props: Partial<GObject.ConstructorProps<Dialog>>) {
         super(omitObjectKeys(props, ["content"]));
 
         this.#childBin = Adw.Bin.new();
@@ -56,7 +60,10 @@ export class Dialog extends Adw.Dialog implements VibeDialog {
 }
 
 export namespace Dialog {
-    export type ConstructorProps = VibeDialog;
+    export type ConstructOnlyProperties = Adw.Dialog.ConstructOnlyProperties & VibeDialog;
+    export interface ReadWriteProperties extends Adw.Dialog.ReadWriteProperties {
+        content: string|Gtk.Widget|null;
+    }
     export interface SignalSignatures extends Adw.Dialog.SignalSignatures {
         "notify::content": () => void;
     }

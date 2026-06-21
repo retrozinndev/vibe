@@ -52,6 +52,7 @@ export class PluginLocal extends Plugin {
       * @returns children and their children... */
     async recurse(path: Gio.File): Promise<Array<Gio.File>> {
         const files: Array<Gio.File> = [];
+        // @ts-ignore
         for(const child of (await path.enumerate_children_async(
             "standard::*", null, GLib.PRIORITY_DEFAULT, null
         ))) {
@@ -73,7 +74,7 @@ export class PluginLocal extends Plugin {
             if(!new RegExp(`\\.(${this.supportedFormats.join('|')})$`).test(file.get_basename()!))
                 continue;
 
-            const song = new Song({
+            const song = new Song<Gio.File>({
                 source: file,
                 title: file.get_basename()!,
                 plugin: this
@@ -81,7 +82,10 @@ export class PluginLocal extends Plugin {
             this.#library.push(song);
 
             const tags = await Meta.getMetaTagsAsync(song.source!.peek_path()!);
-            Meta.applyTags(song, tags, this);
+            Meta.applyTags(song, tags, this, {
+                applyImage: true,
+                applyImageToArtist: true
+            });
         }
     }
 

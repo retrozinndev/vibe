@@ -5,15 +5,17 @@ import { createRoot, getScope, Scope } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { Vibe } from "libvibe";
 import { Media as VibeMedia } from "libvibe/interfaces";
-import { Song, SongList, Queue, Playlist, Artist, Album } from "libvibe/objects";
+import { Song, SongList, Queue, Playlist, Artist, Album, VibeObject } from "libvibe/objects";
 
 
 /** play and control media from plugins */
 @register({ GTypeName: "VibeMedia" })
-export default class Media extends GObject.Object implements VibeMedia {
+export default class Media extends VibeObject implements VibeMedia {
     private static instance: Media;
 
     declare $signals: VibeMedia.SignalSignatures;
+    declare $readWriteProperties: VibeMedia.ReadWriteProperties;
+    declare $readableProperties: VibeMedia.ReadableProperties;
 
     #scope: Scope = createRoot(() => getScope());
     #pipeline: Gst.Pipeline|null = null;
@@ -45,9 +47,9 @@ export default class Media extends GObject.Object implements VibeMedia {
     @setter(Boolean)
     set mute(newValue: boolean) {
         this.#mute = newValue;
-        this.notify("mute");
+        (this as Media).notify("mute");
 
-        this.#pipeline?.get_by_name("player")?.set_property("mute", newValue);
+        this.#pipeline?.get_by_name("player")?.set_property("mute", newValue as never);
     }
 
     @getter(Number)
@@ -67,10 +69,10 @@ export default class Media extends GObject.Object implements VibeMedia {
     @setter(Number)
     set volume(newValue: number) {
         this.#volume = newValue;
-        this.notify("volume");
+        (this as Media).notify("volume");
         this.#pipeline?.get_by_name("player")?.set_property(
             "volume",
-            newValue > 1 ? newValue / 100 : newValue
+            (newValue > 1 ? newValue / 100 : newValue) as never
         );
     }
 
@@ -112,7 +114,7 @@ export default class Media extends GObject.Object implements VibeMedia {
             this.#queue.clear();
             this.#queue.add(song);
             this.#queue.currentSong = 0;
-            this.emit("playing", song);
+            (this as Media).emit("playing", song);
             return;
         }
 
@@ -126,7 +128,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(list !instanceof Queue) { 
             this.#queue.clear();
             list.forEach(song => this.#queue.add(song));
-            this.notify("queue");
+            (this as Media).notify("queue");
         }
 
         if(list.get(posNum) == null) {
@@ -147,8 +149,8 @@ export default class Media extends GObject.Object implements VibeMedia {
 
         this.#pipeline?.set_state(Gst.State.PLAYING);
         this.#status = VibeMedia.PlaybackStatus.PLAYING;
-        this.notify("status");
-        this.emit("resumed", this.#song);
+        (this as Media).notify("status");
+        (this as Media).emit("resumed", this.#song);
     }
 
     public pause(): void {
@@ -157,8 +159,8 @@ export default class Media extends GObject.Object implements VibeMedia {
 
         this.#pipeline?.set_state(Gst.State.PAUSED);
         this.#status = VibeMedia.PlaybackStatus.PAUSED;
-        this.emit("paused", this.#song!);
-        this.notify("status");
+        (this as Media).emit("paused", this.#song!);
+        (this as Media).notify("status");
     }
 
     public next(): void {
@@ -174,7 +176,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(nextSong) { // it has a next song in the queue
             this.#queue.currentSong++;
             this.play(nextSong);
-            this.emit("gone-next", nextSong, this.#queue.currentSong);
+            (this as Media).emit("gone-next", nextSong, this.#queue.currentSong);
             return;
         }
 
@@ -184,7 +186,7 @@ export default class Media extends GObject.Object implements VibeMedia {
             const firstSong = this.#queue.get(0)!;
             this.#queue.currentSong = 0;
             this.play(firstSong);
-            this.emit("gone-next", firstSong, 0);
+            (this as Media).emit("gone-next", firstSong, 0);
         }
     }
 
@@ -205,7 +207,7 @@ export default class Media extends GObject.Object implements VibeMedia {
         if(previousSong) {
             this.#queue.currentSong--;
             this.play(previousSong);
-            this.emit("gone-previous", previousSong, this.#queue.currentSong);
+            (this as Media).emit("gone-previous", previousSong, this.#queue.currentSong);
             return;
         }
 
@@ -215,7 +217,7 @@ export default class Media extends GObject.Object implements VibeMedia {
             const lastSong = this.#queue.get(this.#queue.currentSong)!;
 
             this.play(lastSong);
-            this.emit("gone-previous", lastSong, this.#queue.currentSong);
+            (this as Media).emit("gone-previous", lastSong, this.#queue.currentSong);
         }
     }
 
@@ -229,9 +231,9 @@ export default class Media extends GObject.Object implements VibeMedia {
             switch(msg.type) {
                 case Gst.MessageType.EOS:
                     this.#song = null;
-                    this.notify("song");
+                    (this as Media).notify("song");
                     this.#status = VibeMedia.PlaybackStatus.STOPPED;
-                    this.notify("status");
+                    (this as Media).notify("status");
 
                     break;
             }
@@ -258,19 +260,19 @@ export default class Media extends GObject.Object implements VibeMedia {
                 const newPos = this.#pipeline?.query_position(Gst.Format.TIME)[1];
                 if(newPos === undefined) {
                     this.#position = 0;
-                    this.notify("position");
+                    (this as Media).notify("position");
                 } else if(this.#position !== newPos) {
                     this.#position = newPos / Gst.SECOND;
-                    this.notify("position");
+                    (this as Media).notify("position");
                 }
 
                 const newLength = this.#pipeline?.query_duration(Gst.Format.TIME)[1];
                 if(newLength === undefined) {
                     this.#length = 0;
-                    this.notify("length");
+                    (this as Media).notify("length");
                 } else if(newLength !== this.#length) {
                     this.#length = newLength / Gst.SECOND;
-                    this.notify("length");
+                    (this as Media).notify("length");
                 }
             }, 800)
         );
@@ -290,7 +292,7 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         }
 
         this.#song = song;
-        this.notify("song");
+        (this as Media).notify("song");
 
         this.#pipeline?.set_state(Gst.State.NULL);
         this.#pipeline?.get_bus().remove_watch();
@@ -301,13 +303,13 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
             this.#pipeline = Gst.Pipeline.new("pipeline");
 
             this.#pipeline.add(playbin);
-            playbin.set_property("video-sink", Gst.ElementFactory.make("fakevideosink", "fakesink")); // ignore video stream
-            playbin.set_property("volume", this.#volume / 100);
-            playbin.set_property("mute", this.#mute);
+            playbin.set_property("video-sink", Gst.ElementFactory.make("fakevideosink", "fakesink") as never); // ignore video stream
+            playbin.set_property("volume", this.#volume / 100 as never);
+            playbin.set_property("mute", this.#mute as never);
         }
 
         this.#pipeline.get_by_name("player")!.set_property(
-            "uri", `file://${song.source.peek_path()!}`
+            "uri", `file://${song.source.peek_path()!}` as never
         );
     
         this.#pipeline.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, pos);
@@ -316,11 +318,11 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         this.#pipeline.set_state(initialState);
 
         this.#position = pos;
-        this.notify("position");
+        (this as Media).notify("position");
         this.#length = this.#pipeline.query_duration(Gst.Format.TIME)[1] / Gst.SECOND;
-        this.notify("length");
+        (this as Media).notify("length");
         this.#status = this.stateToPlaybackStatus(initialState);
-        this.notify("status");
+        (this as Media).notify("status");
 
         return true;
     }

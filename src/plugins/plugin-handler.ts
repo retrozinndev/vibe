@@ -11,7 +11,6 @@ import { exportToGlobal } from "./exports";
 
 @register({ GTypeName: "VibePluginHandler" })
 export default class PluginHandler extends GObject.Object {
-
     private static instance: PluginHandler;
 
     #builtins: Array<Plugin> = [];
@@ -19,7 +18,6 @@ export default class PluginHandler extends GObject.Object {
     #builtinPlugins: Array<PluginHandler.PluginConstructor> = [
         PluginLocal
     ];
-
     
     @getter(Array<Plugin>)
     get plugins() { return this.#plugins; }
@@ -50,7 +48,7 @@ export default class PluginHandler extends GObject.Object {
             GLib.PRIORITY_DEFAULT,
             null,
             (self, res) => {
-                const items = [...(self!.enumerate_children_finish(res))]
+                const items = [...(self as Gio.File)!.enumerate_children_finish(res)]
 
                 for(let i = 0; i < items.length; i++) {
                     const item = items[i];
@@ -59,7 +57,7 @@ export default class PluginHandler extends GObject.Object {
                         continue;
 
                     this.importExternal(`${Vibe.pluginsDir.peek_path()!}/${item.get_name()}`).catch(e => {
-                        Adw.MessageDialog.new(null, 
+                        Adw.AlertDialog.new(
                             "Couldn't auto-import plugin", 
                             `An error occurred while importing the plugin "${item.get_name()}": ${e}`
                         )
@@ -96,7 +94,7 @@ export default class PluginHandler extends GObject.Object {
                         console.log("Imported plugin: " + plugin.prettyName + "!");
                         plugin.status = "init";
                         this.#plugins.push(plugin);
-                        this.notify("plugins");
+                        (this as PluginHandler).notify("plugins");
 
                         plugin.status = "ok";
 
@@ -132,7 +130,7 @@ export default class PluginHandler extends GObject.Object {
         pl.status = "init";
         this.#builtins.push(pl);
         this.#plugins.push(pl);
-        this.notify("plugins");
+        (this as PluginHandler).notify("plugins");
         pl.status = "ok";
     }
 
@@ -155,5 +153,16 @@ export namespace PluginHandler {
         default?: PluginHandler.PluginConstructor;
         VibePlugin?: PluginHandler.PluginConstructor;
     };
+
+    export interface SignalSignatures extends GObject.Object.SignalSignatures {
+        "notify::plugin"(): void;
+        "notify::plugins"(): void;
+    }
+    export interface ReadableProperties extends GObject.Object.ReadableProperties {
+        "plugins": Array<Plugin>;
+    }
+    export interface ReadWriteProperties extends GObject.Object.ReadWriteProperties {
+        "plugin": Plugin;
+    }
 }
 

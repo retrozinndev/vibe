@@ -67,7 +67,7 @@ class Mpris extends Service {
 
     
     @method() Raise(): void {
-        App.get_default().get_main_window().show();
+        App.get_default().get_main_window().set_visible(true);
     }
 
     @method() Quit(): void {

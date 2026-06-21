@@ -1,25 +1,18 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import { createBinding, createRoot, getScope, Scope, With } from "gnim";
+import GObject from "gi://GObject?version=2.0";
+import { createBinding, createRoot, With } from "gnim";
 import { getter, gtype, property, register } from "gnim/gobject";
 import { omitObjectKeys } from "../modules/util";
 import { App } from "../app";
 
 
-
-export type PopupProps = {
-    hideOnClose?: boolean;
-    content?: Gtk.Widget|null;
-} & Partial<Omit<Adw.Dialog.ConstructorProps, 
-    "canClose"
-    | "can_close"
->>;
-
-
 @register({ GTypeName: "VibePopup" })
 export class Popup extends Adw.Dialog {
+    declare readonly $readableProperties: Popup.ReadableProperties;
+    declare readonly $signals: Popup.SignalSignatures;
+    declare readonly $readWriteProperties: Popup.ReadWriteProperties;
 
-    #scope!: Scope;
     #containerWidget!: Gtk.Box;
 
     /** hides the popup instead of closing it when clicking the close button */
@@ -32,7 +25,7 @@ export class Popup extends Adw.Dialog {
     @property(gtype<Gtk.Widget|null>(Gtk.Widget))
     content: Gtk.Widget|null = null;
 
-    constructor(props: PopupProps) {
+    constructor(props: Partial<GObject.ConstructorProps<Popup>>) {
         super({
             cssName: "popup",
             canClose: true,
@@ -48,9 +41,8 @@ export class Popup extends Adw.Dialog {
         if(props.content != null)
             this.content = props.content;
 
-        createRoot(() => {
-            this.#scope = getScope();
-            this.#containerWidget = <Gtk.Box class={"container"}>
+        createRoot((dispose) => {
+            this.#containerWidget = <Gtk.Box class={"container"} onDestroy={() => dispose()}>
                 <With value={createBinding(this, "content")}>
                     {(content: Gtk.Widget|null) => content}
                 </With>
@@ -73,7 +65,7 @@ export class Popup extends Adw.Dialog {
     popup(): void {
         this.present(App.get_default().get_main_window());
 
-        const id = this.connect("closed", () => {
+        const id = (this as Popup).connect("closed", () => {
             this.disconnect(id);
             setTimeout(() => 
                 this.run_dispose(),
@@ -91,11 +83,28 @@ export class Popup extends Adw.Dialog {
             return false;
 
         if(this.hideOnClose && this.visible) {
-            this.hide();
+            this.set_visible(false);
             return true;
         }
 
         super.close();
         return true;
+    }
+}
+
+export namespace Popup {
+    export interface SignalSignatures extends Adw.Dialog.SignalSignatures {
+        "notify::hide-on-close"(): void;
+        "notify::container-widget"(): void;
+        "notify::content"(): void;
+    }
+
+    export interface ReadableProperties extends Adw.Dialog.ReadableProperties {
+        "container-widget": Gtk.Box;
+    }
+
+    export interface ReadWriteProperties extends Adw.Dialog.ReadWriteProperties {
+        "hide-on-close": boolean;
+        "content": Gtk.Widget|null;
     }
 }
