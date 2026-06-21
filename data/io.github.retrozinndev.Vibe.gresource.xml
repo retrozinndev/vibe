@@ -14,8 +14,10 @@
         <file alias="arrows-loop-tall-symbolic.svg">icons/arrows-loop-tall-symbolic.svg</file>
         <file alias="arrows-loop-tall-disabled-symbolic.svg">icons/arrows-loop-tall-disabled-symbolic.svg</file>
     </gresource>
+    <gresource prefix="/io/github/retrozinndev/Vibe/css">
+        <file alias="style.css">../build/style.css</file>
+    </gresource>
     <gresource prefix="/io/github/retrozinndev/Vibe/data">
         <file alias="license">../LICENSE</file>
-        <file alias="style.css">../build/style.css</file>
     </gresource>
 </gresources>

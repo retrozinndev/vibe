@@ -2,9 +2,7 @@ import "./pkg";
 import { setConsoleLogDomain } from "console";
 import Adw from "gi://Adw?version=1";
 import GLib from "gi://GLib?version=2.0";
-import Gdk from "gi://Gdk?version=4.0";
 import Gio from "gi://Gio?version=2.0";
-import Gtk from "gi://Gtk?version=4.0";
 import { createRoot, getScope, Scope } from "gnim";
 import { register } from "gnim/gobject";
 import PluginHandler from "./plugins/plugin-handler";
@@ -16,18 +14,15 @@ import { Page } from "./widgets/Page";
 import { Page as VibePage } from "libvibe/interfaces";
 import { Dialog } from "./widgets/Dialog";
 import Mpris from "./modules/mpris";
+import Styler from "./modules/styler";
 
 
 @register({ GTypeName: "Vibe" })
 export class App extends Adw.Application {
     private static instance: App;
 
-    #gresource: Gio.Resource|null = null;
     #license!: string;
-    #cssProvider: Gtk.CssProvider|null = null;
     #mainWindow!: Adw.ApplicationWindow;
-    #encoder!: TextEncoder;
-    #decoder!: TextDecoder;
     #scope!: Scope;
 
     get scope() { return this.#scope; }
@@ -35,45 +30,6 @@ export class App extends Adw.Application {
 
     vfunc_activate(): void {
         createRoot(() => this.main());
-    }
-
-    public resetStyle(): void {
-        if(!this.#cssProvider)
-            return;
-
-        Gtk.StyleContext.remove_provider_for_display(
-            Gdk.Display.get_default()!,
-            this.#cssProvider
-        );
-
-        this.#cssProvider = null;
-    }
-
-    public addStyle(stylesheet: string): void {
-        this.#cssProvider = Gtk.CssProvider.new();
-        this.#cssProvider.load_from_bytes(
-            new TextEncoder().encode(stylesheet)
-        );
-
-        Gtk.StyleContext.add_provider_for_display(
-            Gdk.Display.get_default()!,
-            this.#cssProvider,
-            Gtk.STYLE_PROVIDER_PRIORITY_APPLICATION
-        );
-    }
-
-    public getEncoder(): TextEncoder {
-        if(!this.#encoder)
-            this.#encoder = new TextEncoder();
-
-        return this.#encoder;
-    }
-
-    public getDecoder(): TextDecoder {
-        if(!this.#decoder)
-            this.#decoder = new TextDecoder();
-
-        return this.#decoder;
     }
 
     constructor() {
@@ -88,7 +44,7 @@ export class App extends Adw.Application {
         GLib.set_prgname("vibe");
 
         try {
-            this.#gresource = Gio.Resource.load(
+            const gres = Gio.resource_load(
                 GRESOURCE.split('/').filter(s => 
                     s !== ""
                 ).map(path => {
@@ -107,9 +63,8 @@ export class App extends Adw.Application {
                 }).join('/').replace(/^./, (c) => !/^(\/|\.)/.test(c) ? `/${c}` : c)
             );
 
-            Gio.resources_register(this.#gresource);
+            Gio.resources_register(gres);
         } catch(e) {
-            this.#gresource = null;
             console.error(`Couldn't load GResource: ${e}`);
         }
     }
@@ -123,13 +78,14 @@ export class App extends Adw.Application {
 
     private main(): void {
         this.#scope = getScope();
-        this.loadAssets();
+        this.init();
 
         const vibe = new Vibe(); // auto-added as default
         this.#mainWindow = createMainWindow(this);
         vibe.setApplicationWindow(this.#mainWindow);
         vibe.setDialogConstructor(Dialog as Vibe.DialogConstructor);
 
+        Styler.init(this);
         // init libvibe
         vibe.setData(
             new Media(),
@@ -145,22 +101,16 @@ export class App extends Adw.Application {
 
         start(this.#mainWindow);
         vibe.emit("initialized");
+
+        const id = (this as App).connect("shutdown", () => {
+            this.#scope.dispose();
+            Mpris.stop();
+            this.disconnect(id);
+        });
     }
 
-    private loadAssets(): void {
-        // load stylesheets
-        Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/Vibe/data", Gio.ResourceLookupFlags.NONE
-        ).forEach(name => 
-            /\.css$/.test(name) && this.addStyle(
-                this.getDecoder().decode(Gio.resources_lookup_data(
-                    `/io/github/retrozinndev/Vibe/data/${name}`,
-                    Gio.ResourceLookupFlags.NONE
-                ).toArray())
-            )
-        );
-
-        this.#license = this.getDecoder().decode(
+    private init(): void {
+        this.#license = new TextDecoder("utf-8").decode(
             Gio.resources_lookup_data(
                 "/io/github/retrozinndev/Vibe/data/license",
                 Gio.ResourceLookupFlags.NONE
