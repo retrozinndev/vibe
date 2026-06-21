@@ -13,6 +13,10 @@ import { exportToGlobal } from "./exports";
 export default class PluginHandler extends GObject.Object {
     private static instance: PluginHandler;
 
+    declare readonly $readableProperties: PluginHandler.ReadableProperties;
+    declare readonly $readWriteProperties: PluginHandler.ReadWriteProperties;
+    declare readonly $signals: PluginHandler.SignalSignatures;
+
     #builtins: Array<Plugin> = [];
     #plugins: Array<Plugin> = [];
     #builtinPlugins: Array<PluginHandler.PluginConstructor> = [
@@ -35,6 +39,10 @@ export default class PluginHandler extends GObject.Object {
 
         exportToGlobal();
         this.loadPlugins();
+
+        (this as PluginHandler).connect("notify::plugin", () => {
+            Vibe.getDefault().__media = this.plugin.media;
+        });
     }
 
     private loadPlugins(): void {

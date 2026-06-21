@@ -4,12 +4,12 @@ import { Media as VibeMedia } from "libvibe/interfaces";
 import { App } from "../app";
 import GLib from "gi://GLib?version=2.0";
 import GObject from "gnim/gobject";
-import Media from "./media";
 import { createBinding, createComputed } from "gnim";
 import { createSubscription } from "gnim-utils";
 import Gst from "gi://Gst?version=1.0";
 import { Song } from "libvibe/objects";
 import { Image } from "libvibe/utils";
+import { Vibe } from "libvibe";
 
 
 @iface("org.mpris.MediaPlayer2", { GTypeName: "VibeMpris" })
@@ -127,20 +127,20 @@ namespace Mpris {
         @signal("x") Seeked(_: number) {}
 
         // data
-        @getter("s") get PlaybackStatus() { return this.translatePlayback(Media.getDefault().status); }
-        @getter("s") get LoopStatus() { return this.translateLoop(Media.getDefault().loop); }
+        @getter("s") get PlaybackStatus() { return this.translatePlayback(Vibe.getDefault().media.status); }
+        @getter("s") get LoopStatus() { return this.translateLoop(Vibe.getDefault().media.loop); }
         @setter("s") set LoopStatus(status: Mpris.LoopMode) {
             switch(status) {
                 case Mpris.LoopMode.TRACK:
-                    Media.getDefault().loop = VibeMedia.LoopMode.SONG;
+                    Vibe.getDefault().media.loop = VibeMedia.LoopMode.SONG;
                 break;
 
                 case Mpris.LoopMode.PLAYLIST:
-                    Media.getDefault().loop = VibeMedia.LoopMode.LIST;
+                    Vibe.getDefault().media.loop = VibeMedia.LoopMode.LIST;
                 break;
 
                 default:
-                    Media.getDefault().loop = VibeMedia.LoopMode.NONE;
+                    Vibe.getDefault().media.loop = VibeMedia.LoopMode.NONE;
             }
 
             this.notify("LoopStatus");
@@ -148,9 +148,9 @@ namespace Mpris {
         @getter("d") get MinimumRate() { return 1.0; }
         @getter("d") get Rate() { return 1.0; }
         @getter("d") get MaximumRate() { return 1.0; }
-        @getter("b") get Shuffle() { return Media.getDefault().shuffle !== VibeMedia.ShuffleMode.NONE; }
+        @getter("b") get Shuffle() { return Vibe.getDefault().media.shuffle !== VibeMedia.ShuffleMode.NONE; }
         @setter("b") set Shuffle(enabled: boolean) {
-            Media.getDefault().shuffle = enabled ?
+            Vibe.getDefault().media.shuffle = enabled ?
                 VibeMedia.ShuffleMode.SHUFFLE
             : VibeMedia.ShuffleMode.NONE;
 
@@ -158,7 +158,7 @@ namespace Mpris {
         }
         @getter("a{sv}") get Metadata() { return this.#Metadata; }
         @property("d") Volume: number = 1.0;
-        @getter("x") get Position() { return this.secToMicrosec(Media.getDefault().position); }
+        @getter("x") get Position() { return this.secToMicrosec(Vibe.getDefault().media.position); }
 
         // capabilities
         @getter("b") get CanGoNext() { return this.#CanGoNext; }
@@ -179,9 +179,9 @@ namespace Mpris {
             });
 
             createSubscription(
-                createBinding(Media.getDefault(), "status"),
+                createBinding(Vibe.getDefault(), "media", "status"),
                 () => {
-                    const status = Media.getDefault().status;
+                    const status = Vibe.getDefault().media.status;
                     this.notify("PlaybackStatus");
 
                     switch(status) {
@@ -208,29 +208,29 @@ namespace Mpris {
             );
 
             createSubscription(
-                createBinding(Media.getDefault(), "position"),
+                createBinding(Vibe.getDefault(), "media", "position"),
                 () => this.notify("Position")
             );
 
             createSubscription(
-                createBinding(Media.getDefault(), "length"),
+                createBinding(Vibe.getDefault(), "media", "length"),
                 () => {
                     this.Metadata["mpris:length"] = GLib.Variant.new_int64(
-                        this.secToMicrosec(Media.getDefault().length)
+                        this.secToMicrosec(Vibe.getDefault().media.length)
                     );
                     this.notify("Metadata");
                 }
             );
 
             createSubscription(
-                createBinding(Media.getDefault(), "loop"),
+                createBinding(Vibe.getDefault(), "media", "loop"),
                 () => this.notify("LoopStatus")
             );
 
             const songData = createComputed(() => {
-                const song = createBinding(Media.getDefault(), "song")();
-                const image = createBinding(Media.getDefault(), "song", "image")();
-                const albumImage = createBinding(Media.getDefault(), "song", "album", "image")();
+                const song = createBinding(Vibe.getDefault(), "media", "song")();
+                const image = createBinding(Vibe.getDefault(), "media", "song", "image")();
+                const albumImage = createBinding(Vibe.getDefault(), "media", "song", "album", "image")();
 
                 return [song, (image ?? albumImage ?? null)];
             })
@@ -307,37 +307,37 @@ namespace Mpris {
         }
 
         @method() Next(): void {
-            Media.getDefault().next();
+            Vibe.getDefault().media.next();
         }
 
         @method() Previous(): void {
-            Media.getDefault().previous();
+            Vibe.getDefault().media.previous();
         }
 
         @method() Pause(): void {
-            Media.getDefault().pause();
+            Vibe.getDefault().media.pause();
         }
 
         @method() Play(): void {
-            Media.getDefault().resume();
+            Vibe.getDefault().media.resume();
         }
 
         @method() PlayPause(): void {
-            if(!Media.getDefault().song)
+            if(!Vibe.getDefault().media.song)
                 return;
 
-            Media.getDefault().status === VibeMedia.PlaybackStatus.PLAYING ?
-                Media.getDefault().pause()
-            : Media.getDefault().resume();
+            Vibe.getDefault().media.status === VibeMedia.PlaybackStatus.PLAYING ?
+                Vibe.getDefault().media.pause()
+            : Vibe.getDefault().media.resume();
         }
 
         @method("x") Seek(pos: number): void {
-            Media.getDefault().position = this.microsecToSec(pos);
+            Vibe.getDefault().media.position = this.microsecToSec(pos);
             this.emit("Seeked", pos);
         }
 
         @method("o", "x") SetPosition(_: string, pos: number): void {
-            Media.getDefault().position = this.microsecToSec(pos); // pos is in microseconds, while the actual property in `Media` is in nanoseconds
+            Vibe.getDefault().media.position = this.microsecToSec(pos); // pos is in microseconds, while the actual property in `Media` is in nanoseconds
         }
 
         @method("s") OpenUri(_: string) {}

@@ -37,10 +37,6 @@ export class App extends Adw.Application {
         createRoot(() => this.main());
     }
 
-    vfunc_shutdown(): void {
-        this.#scope.dispose();
-    }
-
     public resetStyle(): void {
         if(!this.#cssProvider)
             return;
@@ -129,15 +125,14 @@ export class App extends Adw.Application {
         this.#scope = getScope();
         this.loadAssets();
 
-        const vibe = new Vibe();
+        const vibe = new Vibe(); // auto-added as default
         this.#mainWindow = createMainWindow(this);
         vibe.setApplicationWindow(this.#mainWindow);
-        vibe.setDialogConstructor(Dialog);
-        start(this.#mainWindow);
+        vibe.setDialogConstructor(Dialog as Vibe.DialogConstructor);
 
         // init libvibe
         vibe.setData(
-            Media.getDefault(),
+            new Media(),
             getPages(),
             Page as new <T extends VibePage.Type>(props: VibePage.ConstructorProps<T>) => Page<T>,
             getToastOverlay()
@@ -145,26 +140,22 @@ export class App extends Adw.Application {
 
         // init plugins
         PluginHandler.getDefault();
-        PluginHandler.getDefault().notify("plugin");
+        //PluginHandler.getDefault().notify("plugin");
         Mpris.init();
 
-        Vibe.getDefault().emit("initialized");
+        start(this.#mainWindow);
+        vibe.emit("initialized");
     }
 
     private loadAssets(): void {
-        // add custom icons
-        Gtk.IconTheme.get_for_display(
-            Gdk.Display.get_default()!
-        ).add_resource_path("/io/github/retrozinndev/Vibe/icons");
-
         // load stylesheets
         Gio.resources_enumerate_children(
-            "/io/github/retrozinndev/Vibe/data", null
+            "/io/github/retrozinndev/Vibe/data", Gio.ResourceLookupFlags.NONE
         ).forEach(name => 
             /\.css$/.test(name) && this.addStyle(
                 this.getDecoder().decode(Gio.resources_lookup_data(
                     `/io/github/retrozinndev/Vibe/data/${name}`,
-                    null
+                    Gio.ResourceLookupFlags.NONE
                 ).toArray())
             )
         );
@@ -172,7 +163,7 @@ export class App extends Adw.Application {
         this.#license = this.getDecoder().decode(
             Gio.resources_lookup_data(
                 "/io/github/retrozinndev/Vibe/data/license",
-                null
+                Gio.ResourceLookupFlags.NONE
             ).toArray()
         );
     }

@@ -1,5 +1,4 @@
 import Gtk from "gi://Gtk?version=4.0";
-import Media from "../modules/media";
 import { Accessor, createBinding, createComputed, getScope, With } from "gnim";
 import { Song } from "libvibe/objects";
 import { Media as VibeMedia } from "libvibe/interfaces";
@@ -7,6 +6,7 @@ import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import { Image } from "./Image";
 import { Image as VibeImage } from "libvibe/utils";
+import { Vibe } from "libvibe";
 
 
 export default () =>
@@ -17,10 +17,10 @@ export default () =>
           hexpand vexpand>
 
             <Gtk.Box class={"song"} $type="start" hexpand={false} halign={Gtk.Align.START}>
-                <Image image={createBinding(Media.getDefault(), "song", "image") as Accessor<VibeImage>}
-                  visible={createBinding(Media.getDefault(), "song", "image").as(Boolean)}
+                <Image image={createBinding(Vibe.getDefault(), "media", "song", "image") as Accessor<VibeImage>}
+                  visible={createBinding(Vibe.getDefault(), "media", "song", "image").as(Boolean)}
                 />
-                <With value={createBinding(Media.getDefault(), "song")}>
+                <With value={createBinding(Vibe.getDefault(), "media", "song")}>
                     {(song: Song|null) => song &&
                         <Gtk.Box class="details" orientation={Gtk.Orientation.VERTICAL}
                           valign={Gtk.Align.CENTER} halign={Gtk.Align.START} vexpand>
@@ -45,39 +45,39 @@ export default () =>
                 <Gtk.Box class={"controls"} spacing={6} halign={Gtk.Align.CENTER} vexpand
                   valign={Gtk.Align.CENTER}>
 
-                    <Gtk.Button class={"shuffle flat"} iconName={createBinding(Media.getDefault(), "shuffle")
+                    <Gtk.Button class={"shuffle flat"} iconName={createBinding(Vibe.getDefault(), "media", "shuffle")
                       .as(shuffle => shuffle === VibeMedia.ShuffleMode.SHUFFLE ?
                               "playlist-shuffle-symbolic"
                           : "playlist-consecutive-symbolic"
                       )}
                       onClicked={() => {
-                          if(Media.getDefault().shuffle === VibeMedia.ShuffleMode.SHUFFLE) {
-                              Media.getDefault().shuffle = VibeMedia.ShuffleMode.NONE;
+                          if(Vibe.getDefault().media.shuffle === VibeMedia.ShuffleMode.SHUFFLE) {
+                              Vibe.getDefault().media.shuffle = VibeMedia.ShuffleMode.NONE;
                               return;
                           }
 
-                          Media.getDefault().shuffle = VibeMedia.ShuffleMode.SHUFFLE;
+                          Vibe.getDefault().media.shuffle = VibeMedia.ShuffleMode.SHUFFLE;
                       }}
                     />
                     <Gtk.Button class={"previous flat"} vexpand={false}
                       iconName={"media-skip-backward-symbolic"} 
-                      onClicked={() => Media.getDefault().previous()}
+                      onClicked={() => Vibe.getDefault().media.previous()}
                     />
                     <Gtk.Button class={"pause pill"}
-                      iconName={createBinding(Media.getDefault(), "status").as(status =>
+                      iconName={createBinding(Vibe.getDefault(), "media", "status").as(status =>
                           status === VibeMedia.PlaybackStatus.PAUSED ?
                               "media-playback-start-symbolic"
                           : "media-playback-pause-symbolic"
                       )} onClicked={() => {
-                          const status = Media.getDefault().status;
+                          const status = Vibe.getDefault().media.status;
 
                           if(status === VibeMedia.PlaybackStatus.PLAYING) {
-                              Media.getDefault().pause();
+                              Vibe.getDefault().media.pause();
                               return;
                           }
 
                           if(status === VibeMedia.PlaybackStatus.PAUSED) {
-                              Media.getDefault().resume();
+                              Vibe.getDefault().media.resume();
                               return;
                           }
 
@@ -85,9 +85,9 @@ export default () =>
                       }}
                     />
                     <Gtk.Button class={"next flat"} iconName={"media-skip-forward-symbolic"} 
-                      onClicked={() => Media.getDefault().next()}
+                      onClicked={() => Vibe.getDefault().media.next()}
                     />
-                    <Gtk.Button class={"loop flat"} iconName={createBinding(Media.getDefault(), "loop")
+                    <Gtk.Button class={"loop flat"} iconName={createBinding(Vibe.getDefault(), "media", "loop")
                       .as(loop => {
                           switch(loop) {
                               case VibeMedia.LoopMode.LIST:
@@ -100,13 +100,13 @@ export default () =>
                           return "arrows-loop-tall-disabled-symbolic";
                       })}
                       onClicked={() => {
-                          if(Media.getDefault().loop === VibeMedia.LoopMode.NONE)
-                              return Media.getDefault().loop = VibeMedia.LoopMode.LIST;
+                          if(Vibe.getDefault().media.loop === VibeMedia.LoopMode.NONE)
+                              return Vibe.getDefault().media.loop = VibeMedia.LoopMode.LIST;
 
-                          if(Media.getDefault().loop === VibeMedia.LoopMode.LIST)
-                              return Media.getDefault().loop = VibeMedia.LoopMode.SONG;
+                          if(Vibe.getDefault().media.loop === VibeMedia.LoopMode.LIST)
+                              return Vibe.getDefault().media.loop = VibeMedia.LoopMode.SONG;
 
-                          Media.getDefault().loop = VibeMedia.LoopMode.NONE;
+                          Vibe.getDefault().media.loop = VibeMedia.LoopMode.NONE;
                       }}
                     />
                 </Gtk.Box>
@@ -116,13 +116,13 @@ export default () =>
                       self.set_range(0, 1);
 
                       let ignoreChange: boolean = false;
-                      const mediaConnections = [
-                          Media.getDefault().connect("notify::position", (media) => {
+                      const mediaSubs = [
+                          createBinding(Vibe.getDefault(), "media", "position").subscribe(() => {
                               ignoreChange = true;
-                              self.set_value(media.position);
+                              self.set_value(Vibe.getDefault().media.position);
                           }),
-                          Media.getDefault().connect("notify::length", (media) => {
-                              self.set_range(0, media.length);
+                          createBinding(Vibe.getDefault(), "media", "length").subscribe(() => {
+                              self.set_range(0, Vibe.getDefault().media.length);
                           })
                       ];
 
@@ -132,11 +132,11 @@ export default () =>
                               return;
                           }
 
-                          Media.getDefault().position = self.get_value();
+                          Vibe.getDefault().media.position = self.get_value();
                       });
 
                       getScope().onCleanup(() => {
-                          mediaConnections.forEach(id => Media.getDefault().disconnect(id))
+                          mediaSubs.forEach(unsub => unsub());
                           self.disconnect(id);
                       });
                   }}
@@ -146,7 +146,7 @@ export default () =>
                 <Gtk.Box class={"volume-slider"} spacing={2}>
                     <Gtk.Button class={"circular flat"} valign={Gtk.Align.CENTER}
                       iconName={createComputed(() => [
-                          createBinding(Media.getDefault(), "volume")(vol =>
+                          createBinding(Vibe.getDefault(), "media", "volume")(vol =>
                               vol >= 80 ?
                                   "audio-volume-high-symbolic"
                               : vol >= 45 ?
@@ -155,23 +155,23 @@ export default () =>
                                   "audio-volume-low-symbolic"
                               : "audio-volume-muted-symbolic"
                           )(),
-                          createBinding(Media.getDefault(), "mute")()
+                          createBinding(Vibe.getDefault(), "media", "mute")()
                       ])((params) => {
                           const [volumeIcon, muted] = params as [string, boolean];
 
                           return !muted ? volumeIcon : "audio-volume-muted-symbolic"
                       })}
-                      onClicked={() => Media.getDefault().mute = !Media.getDefault().mute}
+                      onClicked={() => Vibe.getDefault().media.mute = !Vibe.getDefault().media.mute}
                     />
                     <Gtk.Scale drawValue={false} hexpand widthRequest={120}
                       $={(self) => {
                           self.set_range(0, 100);
-                          self.set_value(Media.getDefault().volume);
+                          self.set_value(Vibe.getDefault().media.volume);
 
                           let ignoreChange: boolean = false;
-                          const mediaId = Media.getDefault().connect("notify::volume", (media) => {
+                          const volumeUnsub = createBinding(Vibe.getDefault(), "media", "volume").subscribe(() => {
                               ignoreChange = true;
-                              self.set_value(media.volume);
+                              self.set_value(Vibe.getDefault().media.volume);
                           });
 
                           const id = self.connect("value-changed", (self) => {
@@ -180,11 +180,11 @@ export default () =>
                                   return;
                               }
 
-                              Media.getDefault().volume = self.get_value();
+                              Vibe.getDefault().media.volume = self.get_value();
                           });
 
                           getScope().onCleanup(() => {
-                              Media.getDefault().disconnect(mediaId);
+                              volumeUnsub();
                               self.disconnect(id);
                           });
                       }}

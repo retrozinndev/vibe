@@ -1,7 +1,6 @@
 import GLib from "gi://GLib?version=2.0";
 import Gst from "gi://Gst?version=1.0";
 import PluginHandler from "../plugins/plugin-handler";
-import { createRoot, getScope, Scope } from "gnim";
 import GObject, { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { Vibe } from "libvibe";
 import { Media as VibeMedia } from "libvibe/interfaces";
@@ -11,13 +10,10 @@ import { Song, SongList, Queue, Playlist, Artist, Album, VibeObject } from "libv
 /** play and control media from plugins */
 @register({ GTypeName: "VibeMedia" })
 export default class Media extends VibeObject implements VibeMedia {
-    private static instance: Media;
-
     declare $signals: VibeMedia.SignalSignatures;
     declare $readWriteProperties: VibeMedia.ReadWriteProperties;
     declare $readableProperties: VibeMedia.ReadableProperties;
 
-    #scope: Scope = createRoot(() => getScope());
     #pipeline: Gst.Pipeline|null = null;
     #length: number = 0;
     #position: number = 0;
@@ -100,13 +96,6 @@ export default class Media extends VibeObject implements VibeMedia {
     constructor() {
         super();
         Gst.init([]);
-    }
-
-    public static getDefault(): Media {
-        if(!this.instance)
-            this.instance = new Media();
-
-        return this.instance;
     }
 
     public playSong(song: Song, pos: number): void {
