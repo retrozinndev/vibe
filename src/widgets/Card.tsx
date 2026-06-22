@@ -12,7 +12,6 @@ import { Image as VibeImage } from "libvibe/utils";
 import { Menu } from "./Menu";
 import { Image } from "./Image";
 import Media from "../modules/media";
-import { App } from "../app";
 import Graphene from "gi://Graphene?version=1.0";
 
 
@@ -90,6 +89,7 @@ class Card extends Gtk.Box {
     constructor(props: Partial<GObject.ConstructorProps<Card>>) {
         super({
             cssName: "card",
+            cssClasses: ["card"],
             ...omitObjectKeys(props, [
                 "title",
                 "buttonAlign",
@@ -101,37 +101,33 @@ class Card extends Gtk.Box {
             ])
         });
 
-        const clickPrimary = Gtk.GestureClick.new(),
-            clickSecondary = Gtk.GestureClick.new();
+        const click = Gtk.GestureClick.new();
 
-        clickSecondary.set_button(Gdk.BUTTON_PRIMARY);
-        clickSecondary.set_button(Gdk.BUTTON_SECONDARY);
+        click.set_button(Gdk.BUTTON_PRIMARY|Gdk.BUTTON_SECONDARY);
         
         createScopedConnection(
-            clickPrimary, "released", (_, xx, yy) => {
+            click, "released", (_, xx, yy) => {
                 const { x, y } = this.compute_point(
-                    App.get_default().get_main_window(),
+                    this,
                     new Graphene.Point({ x: xx, y: yy })
                 )[1];
 
-                (this as Card).emit("clicked", x, y);
-            }
-        );
-
-        createScopedConnection(
-            clickSecondary, "released", (_, x, y) => {
-                (this as Card).emit("menu-request", x, y);
+                if(click.button === Gdk.BUTTON_PRIMARY) {
+                    (this as Card).emit("clicked", x, y);
+                    return;
+                }
 
                 // emit menu-request for plugin
                 if(this.object && this.object.plugin && this.#menu) {
                     this.object.plugin.emit("menu-request", this.object, this.#menu);
                     Vibe.getDefault().emit("menu-request", this.object, this.#menu);
                 }
+
+                (this as Card).emit("menu-request", x, y);
             }
         );
 
-        this.add_controller(clickPrimary);
-        this.add_controller(clickSecondary);
+        this.add_controller(click);
 
         if(props.title !== undefined)
             this.title = props.title;
@@ -198,7 +194,6 @@ class Card extends Gtk.Box {
             </Gtk.Box> as Gtk.Box
         );
     }
-
 }
 
 namespace Card {

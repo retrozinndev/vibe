@@ -82,10 +82,7 @@ export class PluginLocal extends Plugin {
             this.#library.push(song);
 
             const tags = await Meta.getMetaTagsAsync(song.source!.peek_path()!);
-            Meta.applyTags(song, tags, this, {
-                applyImage: true,
-                applyImageToArtist: true
-            });
+            Meta.applyTags(song, tags, this);
         }
     }
 

@@ -8,7 +8,7 @@ import { register } from "gnim/gobject";
 import PluginHandler from "./plugins/plugin-handler";
 import { Vibe } from "libvibe";
 import { programArgs, programInvocationName } from "system";
-import { getPages, getToastOverlay, createMainWindow, start } from "./Window";
+import Window from "./Window";
 import Media from "./modules/media";
 import { Page } from "./widgets/Page";
 import { Page as VibePage } from "libvibe/interfaces";
@@ -81,7 +81,7 @@ export class App extends Adw.Application {
         this.init();
 
         const vibe = new Vibe(); // auto-added as default
-        this.#mainWindow = createMainWindow(this);
+        this.#mainWindow = Window.getDefault(this);
         vibe.setApplicationWindow(this.#mainWindow);
         vibe.setDialogConstructor(Dialog as Vibe.DialogConstructor);
 
@@ -89,9 +89,9 @@ export class App extends Adw.Application {
         // init libvibe
         vibe.setData(
             new Media(),
-            getPages(),
+            Window.getDefault().getPages(),
             Page as new <T extends VibePage.Type>(props: VibePage.ConstructorProps<T>) => Page<T>,
-            getToastOverlay()
+            Window.getDefault().getToastOverlay()
         );
 
         // init plugins
@@ -99,7 +99,7 @@ export class App extends Adw.Application {
         //PluginHandler.getDefault().notify("plugin");
         Mpris.init();
 
-        start(this.#mainWindow);
+        Window.getDefault().init();
         vibe.emit("initialized");
 
         const id = (this as App).connect("shutdown", () => {

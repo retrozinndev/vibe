@@ -3,6 +3,7 @@ import GObject from "gi://GObject?version=2.0";
 import { getter, gtype, register, setter } from "gnim/gobject";
 import { omitObjectKeys } from "../modules/util";
 import { Image as VibeImage } from "libvibe/utils";
+import GLib from "gi://GLib?version=2.0";
 
 
 /** an abstraction made on top of `GtkPicture` to support libvibe `Image` objects.
@@ -23,7 +24,7 @@ export class Image extends Gtk.Picture {
         this.#image = newImage;
         this.notify("image");
 
-        this.setupImage();
+        this.load();
     }
 
     constructor(props: Partial<GObject.ConstructorProps<Image>>) {
@@ -34,40 +35,51 @@ export class Image extends Gtk.Picture {
             ])
         });
 
-        if(props.image !== undefined) {
-            this.#image = props.image;
-            this.setupImage();
-        }
+        if(props.image !== undefined)
+            this.image = props.image;
 
-        this.image?.ref();
         const id = (this as Image).connect("destroy", () => {
             this.disconnect(id);
-            this.image?.unref();
+            this.unload();
         });
     }
 
-    setupImage(): void {
+    load(): void {
         if(!this.image) {
-            if(this.get_paintable())
-                this.set_paintable(null); // unset picture if image is null
-
+            this.set_paintable(null);
             return;
         }
 
         const texture = this.image.texture;
+        this.image.ref();
+
         if(!texture) {
             if(this.get_paintable()) {
-                this.set_paintable(texture);
+                GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+                    this.set_paintable(texture);
+                    return GLib.SOURCE_REMOVE;
+                });
+
                 return;
             }
 
-            if(this.image.source)
-                this.image.load().then(() => this.setupImage()); // load image back into memory from its source
+            if(this.image.source || this.image.hasCacheFile) {
+                this.image.load().then(() => this.load())
+                    .catch(console.error);
+            }
 
             return;
         }
 
-        this.set_paintable(texture);
+        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+            this.set_paintable(texture);
+            return GLib.SOURCE_REMOVE;
+        });
+    }
+
+    unload(): void {
+        this.image?.unref();
+        this.set_paintable(null);
     }
 }
 

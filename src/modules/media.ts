@@ -7,7 +7,7 @@ import { Media as VibeMedia } from "libvibe/interfaces";
 import { Song, SongList, Queue, Playlist, Artist, Album, VibeObject } from "libvibe/objects";
 
 
-/** play and control media from plugins */
+/** default media interface implementation (plays song's file) */
 @register({ GTypeName: "VibeMedia" })
 export default class Media extends VibeObject implements VibeMedia {
     declare $signals: VibeMedia.SignalSignatures;

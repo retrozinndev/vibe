@@ -1,24 +1,29 @@
 import Gtk from "gi://Gtk?version=4.0";
-import { Accessor, createBinding, createComputed, getScope, With } from "gnim";
+import { createBinding, createComputed, getScope, With } from "gnim";
 import { Song } from "libvibe/objects";
 import { Media as VibeMedia } from "libvibe/interfaces";
 import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import { Image } from "./Image";
-import { Image as VibeImage } from "libvibe/utils";
 import { Vibe } from "libvibe";
 
 
-export default () =>
-    <Adw.Clamp orientation={Gtk.Orientation.VERTICAL} maximumSize={75} vexpand={false}
+export default () => {
+    const songImage = createComputed(() => {
+        const albumArt = createBinding(Vibe.getDefault(), "media", "song", "album", "image")();
+        const image = createBinding(Vibe.getDefault(), "media", "song", "image")();
+
+        return image ?? albumArt!;
+    });
+
+    return <Adw.Clamp orientation={Gtk.Orientation.VERTICAL} maximumSize={75} vexpand={false}
       heightRequest={80}>
 
         <Gtk.CenterBox class={"bg-secondary omniplayer"} valign={Gtk.Align.CENTER}
           hexpand vexpand>
 
             <Gtk.Box class={"song"} $type="start" hexpand={false} halign={Gtk.Align.START}>
-                <Image image={createBinding(Vibe.getDefault(), "media", "song", "image") as Accessor<VibeImage>}
-                  visible={createBinding(Vibe.getDefault(), "media", "song", "image").as(Boolean)}
+                <Image image={songImage} visible={songImage(Boolean)}
                 />
                 <With value={createBinding(Vibe.getDefault(), "media", "song")}>
                     {(song: Song|null) => song &&
@@ -193,3 +198,4 @@ export default () =>
             </Gtk.Box>
         </Gtk.CenterBox>
     </Adw.Clamp> as Gtk.Widget;
+}

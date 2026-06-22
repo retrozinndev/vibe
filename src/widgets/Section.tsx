@@ -18,6 +18,7 @@ import { toBoolean } from "gnim-utils";
 import Card from "./Card";
 import Media from "../modules/media";
 import Gio from "gi://Gio?version=2.0";
+import { Image } from "libvibe/utils";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -75,6 +76,7 @@ class Section extends Gtk.Box {
     constructor(props: VibeSection & Partial<GObject.ConstructorProps<Section>>) {
         super({
             cssName: "section",
+            valign: Gtk.Align.START,
             ...omitObjectKeys(props, [
                 "content",
                 "title",
@@ -110,6 +112,11 @@ class Section extends Gtk.Box {
         
         if(props.type !== undefined)
             this.type = props.type;
+
+        const id = (this as Section).connect("destroy", () => {
+            this.disconnect(id);
+            this.#grid.run_dispose();
+        });
 
         this.#grid.remove_css_class("view");
         this.#grid.set_hexpand(true);
@@ -170,11 +177,10 @@ namespace Section {
                     const widget = obj as Gtk.ListItem;
 
                     widget.set_child(this.genCard(widget.get_item()! as never));
+                    widget.get_child()!.get_parent()?.set_valign(Gtk.Align.START);
                 }),
                 (this as ItemFactory).connect("teardown", (_, obj) => {
                     const widget = obj as Gtk.ListItem;
-
-                    (widget.get_child() as Card)?.image?.unref();
                     widget.set_child(null);
                 })
             ];
@@ -190,6 +196,14 @@ namespace Section {
                     )
                 : createBinding(item, "title") as Accessor<string>
               }
+              image={item instanceof Song ?
+                  createComputed(() => {
+                      const albumArt = createBinding(item, "album", "image")()!;
+                      const image = createBinding(item, "image")()!;
+
+                      return image ?? albumArt;
+                  })
+              : createBinding(item, "image") as Accessor<Image<any>>}
               description={
                   item instanceof SongList ?
                       createBinding(item, "description") as Accessor<string>
@@ -207,10 +221,11 @@ namespace Section {
                   content: item
               })}
               onDestroy={() => dispose()}
+              valign={Gtk.Align.START}
+              class="card"
+              widthRequest={150}
+              heightRequest={230}
             /> as Card);
-
-            widget?.add_css_class("card");
-            widget.set_size_request(150, -1);
 
             return widget;
         }

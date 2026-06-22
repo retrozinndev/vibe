@@ -1,6 +1,7 @@
 import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
-import { Accessor, createBinding, createRoot, For } from "gnim";
+import { Accessor, createBinding, createRoot, For, getScope, type Scope } from "gnim";
+import { register } from "gnim/gobject";
 import { createScopedConnection, createSecureAccessorBinding } from "gnim-utils";
 import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
@@ -12,110 +13,139 @@ import AboutDialog from "./widgets/AboutDialog";
 import { Home } from "./pages/Home";
 import { Search } from "./pages/Search";
 import { Library } from "./pages/Library";
+import GObject from "gi://GObject?version=2.0";
+import { App } from "./app";
 
 
-let pages: Pages, toastOverlay: Adw.ToastOverlay;
+@register({ GTypeName: "VibeMainWindow" })
+export default class Window extends Adw.ApplicationWindow {
+    protected static instance: Window;
+    protected static pagesList: Array<new () => Page> = [
+        Home,
+        Search,
+        Library
+    ];
 
-export function getPages(): Pages {
-    return pages;
-}
+    #overlay!: Adw.ToastOverlay;
+    #pageStack!: Pages;
+    #scope: Scope;
 
-export function getToastOverlay(): Adw.ToastOverlay {
-    return toastOverlay;
-}
+    constructor(props?: Partial<GObject.ConstructorProps<Window>>) {
+        super({
+            title: "Vibe",
+            hideOnClose: false,
+            visible: true,
+            ...(props ?? {})
+        });
 
-export const createMainWindow = (app: Adw.Application) => 
-    <Adw.ApplicationWindow title={"Vibe"} hideOnClose={false} visible 
-      application={app} class={DEVEL ? "devel" : ""} 
-    /> as Adw.ApplicationWindow;
+        if(DEVEL)
+            this.add_css_class("devel");
 
-export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose) => {
-    pages = <Pages transitionType={Gtk.StackTransitionType.SLIDE_UP_DOWN} 
-      transitionDuration={400} 
-      $={(self) => {
-          [
-            new Home(),
-            new Search(),
-            new Library()
-          ].forEach(page => self.addStatic(page))
-      }}
-    /> as Pages;
+        this.#scope = getScope();
+        createScopedConnection((this as Window), "close-request", () => {
+            this.#scope.dispose();
+            return true;
+        });
+    }
 
-    createScopedConnection(mainWindow, "close-request", () => {
-        dispose();
-        return false;
-    });
+    public init(): void {
+        if(this.#overlay)
+            return;
 
-    mainWindow.set_content(
-        <Gtk.Box class={"container background"} orientation={Gtk.Orientation.VERTICAL}>
-            <Adw.NavigationSplitView vexpand sidebarPosition={Gtk.PackType.START}>
-                {/* sidebar */}
-                <Adw.NavigationPage title={"Sidebar"} $type="sidebar">
-                    <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand={false} spacing={6}
-                      class={"sidebar-container"}>
+        this.#overlay = Adw.ToastOverlay.new();
+        this.#pageStack = new Pages({
+            transitionDuration: 400,
+            transitionType: Gtk.StackTransitionType.SLIDE_UP_DOWN,
+        });
 
-                        <Adw.HeaderBar class={"flat"}>
-                            <PluginSelector $type="start" />
-                            <Gtk.Label class="heading" label="Vibe" $type="title" />
-                            <Gtk.MenuButton class={"more flat"} iconName={"open-menu-symbolic"}
-                              $type="end">
+        for(const Page of Window.pagesList)
+            this.#pageStack.addStatic(new Page());
 
-                                <Menu $type="popover" buttons={[
-                                    {
-                                        label: "Settings"
-                                    }, {
-                                        label: "About",
-                                        onClicked: AboutDialog
-                                    }
-                                ]} />
-                            </Gtk.MenuButton>
-                        </Adw.HeaderBar>
 
-                        <For each={createBinding(pages, "staticPages") as Accessor<Array<Page>>}>
-                            {(page: Page) =>
-                                <NavigationTabButton iconName={createBinding(page, "iconName") as Accessor<string>}
-                                  actionClicked={() => {
-                                      // all tab pages are already added, so we can do that
-                                      pages.set_visible_child_full(
-                                          String(page.id),
-                                          Gtk.StackTransitionType.CROSSFADE
-                                      );
+        this.#overlay.set_child(this.#pageStack);
+        this.set_content(
+            <Gtk.Box class={"container background"} orientation={Gtk.Orientation.VERTICAL}>
+                <Adw.NavigationSplitView vexpand sidebarPosition={Gtk.PackType.START}>
+                    {/* sidebar */}
+                    <Adw.NavigationPage title={"Sidebar"} $type="sidebar">
+                        <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand={false} spacing={6}
+                          class={"sidebar-container"}>
 
-                                      pages.lastStaticPage = page;
-                                  }} 
-                                  visible={createBinding(page, "visible")}
-                                  label={createBinding(page, "tabName")}
-                                  class={createBinding(pages, "currentPage").as(p =>
-                                      page.id === p.id ? "raised" : "flat"
-                                  )}
+                            <Adw.HeaderBar class={"flat"}>
+                                <PluginSelector $type="start" />
+                                <Gtk.Label class="heading" label="Vibe" $type="title" />
+                                <Gtk.MenuButton class={"more flat"} iconName={"open-menu-symbolic"}
+                                  $type="end">
+
+                                    <Menu $type="popover" buttons={[
+                                        {
+                                            label: "Settings"
+                                        }, {
+                                            label: "About",
+                                            onClicked: AboutDialog
+                                        }
+                                    ]} />
+                                </Gtk.MenuButton>
+                            </Adw.HeaderBar>
+
+                            <For each={createBinding(this.#pageStack, "staticPages") as Accessor<Array<Page>>}>
+                                {(page: Page) =>
+                                    <NavigationTabButton iconName={createBinding(page, "iconName") as Accessor<string>}
+                                      actionClicked={() => {
+                                          // all tab pages are already added, so we can do that
+                                          this.#pageStack.set_visible_child_full(
+                                              String(page.id),
+                                              Gtk.StackTransitionType.CROSSFADE
+                                          );
+
+                                          this.#pageStack.lastStaticPage = page;
+                                      }} 
+                                      visible={createBinding(page, "visible")}
+                                      label={createBinding(page, "tabName")}
+                                      class={createBinding(this.#pageStack, "currentPage").as(p =>
+                                          page.id === p.id ? "raised" : "flat"
+                                      )}
+                                    />
+                                }
+                            </For>
+                        </Gtk.Box>
+                    </Adw.NavigationPage>
+
+                    {/* page */}
+                    <Adw.NavigationPage title={createSecureAccessorBinding<PageWidget>(
+                        createBinding(this.#pageStack, "visibleChild") as Accessor<PageWidget>, "title", ""
+                    )} name={"navpage"}>
+                        <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
+                            <Adw.HeaderBar class={"flat"}>
+                                <Gtk.Button iconName={"go-previous-symbolic"} $type="start" 
+                                  visible={createBinding(this.#pageStack, "canGoBack")}
+                                  onClicked={() => this.#pageStack.back()}
                                 />
-                            }
-                        </For>
-                    </Gtk.Box>
-                </Adw.NavigationPage>
+                                <Gtk.Button iconName={"view-refresh-symbolic"} $type="end"
+                                  onClicked={() => this.#pageStack.currentPage?.emit("refresh")}
+                                />
+                            </Adw.HeaderBar>
+                            {this.#overlay}
+                        </Gtk.Box>
+                    </Adw.NavigationPage>
+                </Adw.NavigationSplitView>
+                <Gtk.Separator />
+                <OmniPlayer />
+            </Gtk.Box> as Gtk.Box
+        );
+    }
 
-                {/* page */}
-                <Adw.NavigationPage title={createSecureAccessorBinding<PageWidget>(
-                    createBinding(pages, "visibleChild") as Accessor<PageWidget>, "title", ""
-                )} name={"navpage"}>
-                    <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
-                        <Adw.HeaderBar class={"flat"}>
-                            <Gtk.Button iconName={"go-previous-symbolic"} $type="start" 
-                              visible={createBinding(pages, "canGoBack")}
-                              onClicked={() => pages.back()}
-                            />
-                            <Gtk.Button iconName={"view-refresh-symbolic"} $type="end"
-                              onClicked={() => pages.currentPage?.emit("refresh")}
-                            />
-                        </Adw.HeaderBar>
-                        <Adw.ToastOverlay $={self => toastOverlay = self}>
-                            {pages}
-                        </Adw.ToastOverlay>
-                    </Gtk.Box>
-                </Adw.NavigationPage>
-            </Adw.NavigationSplitView>
-            <Gtk.Separator />
-            <OmniPlayer />
-        </Gtk.Box> as Gtk.Box
-    );
-});
+    public static getDefault(app?: Adw.Application): Window {
+        return this.instance ??= createRoot(() =>
+            new this({ application: app ?? App.get_default() })
+        );
+    }
+
+    public getPages(): Pages {
+        return this.#pageStack;
+    }
+
+    public getToastOverlay(): Adw.ToastOverlay {
+        return this.#overlay;
+    }
+}
