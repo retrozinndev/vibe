@@ -116,11 +116,11 @@ export class PluginLocal extends Plugin {
             {
                 title: "Your Songs",
                 description: "Songs that have been found in the music directory",
-                type: "listrow",
+                type: "row",
                 headerButtons: [{
-                    label: "bleh!",
+                    label: "omg! it's gridview!",
                     onClicked: () => {
-                        print("haha!");
+                        print("dude you have no idea how happy i'm feeling now for making this work");
                     }
                 }],
                 content: this.#library

@@ -47,7 +47,7 @@ export const start = (mainWindow: Adw.ApplicationWindow) => createRoot((dispose)
     });
 
     mainWindow.set_content(
-        <Gtk.Box class={"container"} orientation={Gtk.Orientation.VERTICAL}>
+        <Gtk.Box class={"container background"} orientation={Gtk.Orientation.VERTICAL}>
             <Adw.NavigationSplitView vexpand sidebarPosition={Gtk.PackType.START}>
                 {/* sidebar */}
                 <Adw.NavigationPage title={"Sidebar"} $type="sidebar">

@@ -93,7 +93,7 @@ export class Home extends Page {
             stack.add_named(
                 <Gtk.Box>
                     {sections && sections.map(sect =>
-                        <Section {...sect} />
+                        <Section vexpand={false} {...sect} />
                     )}
                 </Gtk.Box> as Gtk.Box,
                 "content"
