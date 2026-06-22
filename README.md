@@ -6,7 +6,7 @@ The name is a [recursive acronym](https://en.wikipedia.org/wiki/Recursive_acrony
 > This is still in development and doesn't work yet!
 
 ## State
-This is only a demonstration, some UI elements don't work as intended.
+This is only a demonstration, some UI elements might not work as intended.
 ![App demo screenshot](/repo/demo.png)
 
 
