@@ -227,8 +227,11 @@ export default class Media extends VibeObject implements VibeMedia {
             switch(msg.type) {
                 case Gst.MessageType.EOS:
                     if(this.loop !== VibeMedia.LoopMode.NONE) {
-                        this.next(this.loop === VibeMedia.LoopMode.SONG);
-                        return GLib.SOURCE_REMOVE;
+                        const loopingSong = this.loop === VibeMedia.LoopMode.SONG;
+                        this.next(loopingSong);
+                        return loopingSong ?
+                            GLib.SOURCE_CONTINUE
+                        : GLib.SOURCE_REMOVE;
                     }
 
                     this.#song = null;
