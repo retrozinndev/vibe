@@ -22,7 +22,7 @@ export default class Media extends VibeObject implements VibeMedia {
     #mute: boolean = false;
     #intervals: Array<GLib.Source> = [];
     #song: Song|null = null;
-    #volume: number = 100;
+    #volume: number = 60;
     
     /** the active song, can be null */
     @getter(gtype<Song|null>(Song)) 
@@ -152,13 +152,14 @@ export default class Media extends VibeObject implements VibeMedia {
         (this as Media).notify("status");
     }
 
-    public next(): void {
+    /** @param keepLoop whether to keep the loop mode in a case where it would be changed */
+    public next(keepLoop: boolean = false): void {
         if(this.#queue.length < 1 || !this.#song)
             return;
 
         // if the user clearly clicked in the "next" button, they don't want this anymore(probably)
         // maybe doing a config to enable/disable this function can avoid user angriness :P
-        if(this.loop === VibeMedia.LoopMode.SONG)
+        if(!keepLoop && this.loop === VibeMedia.LoopMode.SONG)
             this.loop = VibeMedia.LoopMode.LIST;
 
         const nextSong: Song|undefined = this.#queue.get(this.#queue.currentSong+1);
@@ -169,7 +170,13 @@ export default class Media extends VibeObject implements VibeMedia {
             return;
         }
 
-        // the previous song was the last, so we loop back the queue(if mode is LIST)
+        // reset current song position so it'll repeat(loop: SONG)
+        if(this.loop === VibeMedia.LoopMode.SONG) {
+            this.position = 0;
+            return;
+        }
+
+        // the previous song was the last, so we loop back the queue(loop: LIST)
         // (this also works if it there's a single song in the queue)
         if(this.loop === VibeMedia.LoopMode.LIST) {
             const firstSong = this.#queue.get(0)!;
@@ -219,21 +226,19 @@ export default class Media extends VibeObject implements VibeMedia {
         bus.add_watch(GLib.PRIORITY_DEFAULT, (_, msg) => {
             switch(msg.type) {
                 case Gst.MessageType.EOS:
+                    if(this.loop !== VibeMedia.LoopMode.NONE) {
+                        this.next(this.loop === VibeMedia.LoopMode.SONG);
+                        return GLib.SOURCE_REMOVE;
+                    }
+
                     this.#song = null;
                     (this as Media).notify("song");
                     this.#status = VibeMedia.PlaybackStatus.STOPPED;
                     (this as Media).notify("status");
-
-                    break;
+                break;
             }
 
-            if(this.loop !== VibeMedia.LoopMode.NONE) {
-                this.next();
-
-                return false;
-            }
-
-            return true;
+            return GLib.SOURCE_CONTINUE;
         });
     }
 

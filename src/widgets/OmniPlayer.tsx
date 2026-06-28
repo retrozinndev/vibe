@@ -6,6 +6,7 @@ import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import { Image } from "./Image";
 import { Vibe } from "libvibe";
+import GLib from "gi://GLib?version=2.0";
 
 
 export default () => {
@@ -15,6 +16,8 @@ export default () => {
 
         return image ?? albumArt!;
     });
+
+    let timeout: GLib.Source|undefined;
 
     return <Adw.Clamp orientation={Gtk.Orientation.VERTICAL} maximumSize={75} vexpand={false}
       heightRequest={80}>
@@ -93,7 +96,7 @@ export default () => {
                       onClicked={() => Vibe.getDefault().media.next()}
                     />
                     <Gtk.Button class={"loop flat"} iconName={createBinding(Vibe.getDefault(), "media", "loop")
-                      .as(loop => {
+                      (loop => {
                           switch(loop) {
                               case VibeMedia.LoopMode.LIST:
                                   return "arrows-loop-tall-symbolic";
@@ -115,7 +118,7 @@ export default () => {
                       }}
                     />
                 </Gtk.Box>
-                <Gtk.Scale class={"slider"} drawValue={false} hexpand valign={Gtk.Align.START}
+                <Gtk.Scale class={"slider fine-tune"} drawValue={false} hexpand valign={Gtk.Align.START}
                   $={(self) => {
                       self.set_value(0);
                       self.set_range(0, 1);
@@ -124,10 +127,24 @@ export default () => {
                       const mediaSubs = [
                           createBinding(Vibe.getDefault(), "media", "position").subscribe(() => {
                               ignoreChange = true;
-                              self.set_value(Vibe.getDefault().media.position);
+                              const pos = Vibe.getDefault().media.position;
+
+                              if(pos < 0) {
+                                  self.set_value(0);
+                                  return;
+                              }
+
+                              self.set_value(pos);
                           }),
                           createBinding(Vibe.getDefault(), "media", "length").subscribe(() => {
-                              self.set_range(0, Vibe.getDefault().media.length);
+                              const length = Vibe.getDefault().media.length;
+                              if(length < 0) {
+                                  self.set_range(0, 0);
+                                  return;
+                              }
+
+                              self.set_range(0, length);
+                                  
                           })
                       ];
 
@@ -150,8 +167,8 @@ export default () => {
             <Gtk.Box $type="end" hexpand={false} halign={Gtk.Align.END}>
                 <Gtk.Box class={"volume-slider"} spacing={2}>
                     <Gtk.Button class={"circular flat"} valign={Gtk.Align.CENTER}
-                      iconName={createComputed(() => [
-                          createBinding(Vibe.getDefault(), "media", "volume")(vol =>
+                      iconName={createComputed(() => {
+                          const volumeIcon = createBinding(Vibe.getDefault(), "media", "volume")(vol =>
                               vol >= 80 ?
                                   "audio-volume-high-symbolic"
                               : vol >= 45 ?
@@ -159,22 +176,20 @@ export default () => {
                               : vol > 0 ?
                                   "audio-volume-low-symbolic"
                               : "audio-volume-muted-symbolic"
-                          )(),
-                          createBinding(Vibe.getDefault(), "media", "mute")()
-                      ])((params) => {
-                          const [volumeIcon, muted] = params as [string, boolean];
+                          )();
+                          const mute = createBinding(Vibe.getDefault(), "media", "mute")();
 
-                          return !muted ? volumeIcon : "audio-volume-muted-symbolic"
+                          return !mute ? volumeIcon : "audio-volume-muted-symbolic"
                       })}
                       onClicked={() => Vibe.getDefault().media.mute = !Vibe.getDefault().media.mute}
                     />
-                    <Gtk.Scale drawValue={false} hexpand widthRequest={120}
+                    <Gtk.Scale drawValue={false} hexpand widthRequest={120} class="slider"
                       $={(self) => {
-                          self.set_range(0, 100);
+                          self.set_range(0, 80);
                           self.set_value(Vibe.getDefault().media.volume);
 
                           let ignoreChange: boolean = false;
-                          const volumeUnsub = createBinding(Vibe.getDefault(), "media", "volume").subscribe(() => {
+                          const unsub = createBinding(Vibe.getDefault(), "media", "volume").subscribe(() => {
                               ignoreChange = true;
                               self.set_value(Vibe.getDefault().media.volume);
                           });
@@ -189,7 +204,7 @@ export default () => {
                           });
 
                           getScope().onCleanup(() => {
-                              volumeUnsub();
+                              unsub();
                               self.disconnect(id);
                           });
                       }}
