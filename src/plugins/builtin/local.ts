@@ -2,7 +2,7 @@ import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
 import { Section, Vibe } from "libvibe";
-import { SongList, Song, Artist } from "libvibe/objects";
+import { SongList, Song, Artist, Album } from "libvibe/objects";
 import { Meta } from "libvibe/utils";
 import { Plugin } from "libvibe/plugin";
 
@@ -70,7 +70,22 @@ export class PluginLocal extends Plugin {
 
     /** recursively-add songs to library from a directory */
     private async addToLibrary(dir: Gio.File): Promise<void> {
-        for(const file of (await this.recurse(dir))) {
+        const files = (await this.recurse(dir)).sort((fa, fb) => {
+            const a = fa.query_info(Gio.FILE_ATTRIBUTE_TIME_MODIFIED, Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null),
+                b = fb.query_info(Gio.FILE_ATTRIBUTE_TIME_MODIFIED, Gio.FileQueryInfoFlags.NOFOLLOW_SYMLINKS, null);
+            const aTime = a.get_modification_date_time(),
+                bTime = b.get_modification_date_time();
+
+            if(!bTime)
+                return 0;
+
+            if(!aTime)
+                return 1;
+
+            return bTime.difference(aTime) < 0 ? 0 : 1;
+        });
+
+        for(const file of files) {
             if(!new RegExp(`\\.(${this.supportedFormats.join('|')})$`).test(file.get_basename()!))
                 continue;
 
@@ -86,7 +101,7 @@ export class PluginLocal extends Plugin {
         }
     }
 
-    async getRecommendations(length?: number, offset?: number) {
+    async getRecommendations(_?: number, __?: number) {
         if(!this.#scanned) {
             this.#promise ??= this.addToLibrary(this.#musicDir).finally(() => {
                 this.#scanned = true;
@@ -103,26 +118,19 @@ export class PluginLocal extends Plugin {
             if(this.#promise) 
                 await this.#promise;
         } catch(e) {
+            console.error(e);
             Vibe.getDefault().addDialog({
                 title: "Scan Error",
-                content: `An error occurred while scanning songs in the Music directory:\n${(e as Error).message}`
+                content: `A scan error occurred:\n${(e as Error).message}`
             });
         }
 
-        return [
-            {
-                title: "Your Songs",
-                description: "Songs that have been found in the music directory",
-                type: "row",
-                headerButtons: [{
-                    label: "omg! it's gridview!",
-                    onClicked: () => {
-                        print("dude you have no idea how happy i'm feeling now for making this work");
-                    }
-                }],
-                content: this.#library
-            } satisfies Section
-        ];
+        return [{
+            title: "New songs",
+            description: "Songs that have been added to your library recently",
+            type: "row",
+            content: this.#library.slice(0, 8)
+        }] satisfies Array<Section>;
     }
 
     
@@ -140,6 +148,7 @@ export class PluginLocal extends Plugin {
     }
 
     async search(search: string) {
+        const data = Vibe.getDefault().objects[this.id];
         const results: Record<string, Array<Song|SongList|Artist>> = {
             songs: [],
             artists: [],
@@ -152,16 +161,16 @@ export class PluginLocal extends Plugin {
                 results.songs.unshift(item);
                 return;
             }
-
-            if(item instanceof SongList && this.match(search, item)) {
-                results.albums.unshift(item);
-                return;
-            }
         });
 
-        Vibe.getDefault().objects.find(d => d.plugin.id === this.id)!.artist.forEach(artist => {
+        data.artist.forEach(artist => {
             if(this.match(search, artist.displayName ?? artist.name ?? "Unnamed Artist")) 
                 results.artists.unshift(artist);
+        });
+
+        data.album.forEach(album => {
+            if(this.match(search, album.title ?? "Untitled Album"))
+                results.albums.unshift(album);
         });
 
         return Object.keys(results).filter(key => 

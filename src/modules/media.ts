@@ -343,9 +343,8 @@ The dev is working hard on that ;D (it's my first time using gstreamer)");
         }
 
         if(object instanceof Artist) {
-            const songs = Vibe.getDefault().objects.find(o =>
-                o.plugin.id === PluginHandler.getDefault().plugin.id
-            )?.song.filter(s => s.artist.includes(object));
+            const songs = Vibe.getDefault().objects[PluginHandler.getDefault().plugin.id]
+                ?.song.filter(s => s.artist.includes(object));
 
             if(songs && songs.length > 0)
                 Vibe.getDefault().media.playList(

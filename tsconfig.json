@@ -1,6 +1,7 @@
 {
     "$schema": "https://json.schemastore.org/tsconfig.json",
     "compilerOptions": {
+        "rootDir": ".",
         "allowJs": false,
         "lib": ["ES2025"],
         "moduleResolution": "bundler",
@@ -11,6 +12,8 @@
         "noImplicitThis": true,
         "useUnknownInCatchVariables": true,
         "forceConsistentCasingInFileNames": true,
-        "types": ["./.types/gi"]
-    }
+        "types": ["gi"],
+        "typeRoots": [".types"]
+    },
+    "exclude": [".types"]
 }

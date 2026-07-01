@@ -19,6 +19,7 @@ import Card from "./Card";
 import Media from "../modules/media";
 import Gio from "gi://Gio?version=2.0";
 import { Image } from "libvibe/utils";
+import { AnimatedScroll } from "./AnimatedScroll";
 
 
 @register({ GTypeName: "VibeSection" })
@@ -155,11 +156,23 @@ class Section extends Gtk.Box {
         );
 
         this.append(
-            <Gtk.ScrolledWindow hscrollbarPolicy={Gtk.PolicyType.AUTOMATIC} vscrollbarPolicy={Gtk.PolicyType.NEVER}
-              propagateNaturalWidth propagateNaturalHeight hexpand>
-              
-                {this.#grid}
-            </Gtk.ScrolledWindow> as Gtk.ScrolledWindow
+            <Gtk.Overlay>
+                <Gtk.Button iconName="go-previous-symbolic" onClicked={(self: Gtk.Button) => {
+                    const widget = (self.get_parent() as Gtk.Overlay).get_child() as AnimatedScroll;
+                    const adjust = widget.get_hadjustment();
+
+                    widget.scroll(adjust.get_value() - (adjust.get_page_size() / 2));
+                }} halign={Gtk.Align.START} $type="overlay" />
+                <AnimatedScroll propagateNaturalWidth vscrollbarPolicy={Gtk.PolicyType.NEVER}>
+                    {this.#grid}
+                </AnimatedScroll>
+                <Gtk.Button iconName="go-next-symbolic" onClicked={(self: Gtk.Button) => {
+                    const widget = (self.get_parent() as Gtk.Overlay).get_child() as AnimatedScroll;
+                    const adjust = widget.get_hadjustment();
+
+                    widget.scroll(adjust.get_value() + (adjust.get_page_size() / 2));
+                }} halign={Gtk.Align.END} $type="overlay" />
+            </Gtk.Overlay> as Gtk.Overlay
         );
     }
 }
@@ -179,10 +192,6 @@ namespace Section {
                     widget.set_child(this.genCard(widget.get_item()! as never));
                     widget.get_child()!.get_parent()?.set_valign(Gtk.Align.START);
                 }),
-                (this as ItemFactory).connect("teardown", (_, obj) => {
-                    const widget = obj as Gtk.ListItem;
-                    widget.set_child(null);
-                })
             ];
         }
 
@@ -213,10 +222,10 @@ namespace Section {
                       a.displayName ?? a.name ?? "Unknown"
                   ).join(", "))
               }
-              buttons={[{
+              buttons={item instanceof Song ? [{
                   iconName: "media-playback-start-symbolic",
                   onClicked: () => Media.playObject(item)
-              }]}
+              }] : undefined}
               onClicked={() => Vibe.getDefault().addPage({
                   content: item
               })}
