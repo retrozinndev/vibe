@@ -1,4 +1,3 @@
-import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import { createBinding, createRoot, getScope, Scope } from "gnim";
 import { Section as SectionType, Vibe } from "libvibe";
@@ -19,7 +18,7 @@ export class Home extends Page {
             title: "For You",
             tabName: "Home",
             iconName: "go-home-symbolic",
-            content: <Gtk.Stack transitionType={Gtk.StackTransitionType.CROSSFADE} /> as Gtk.Stack
+            content: new Gtk.Box({ visible: true })
         });
 
         this.#scope.run(() => {
@@ -31,22 +30,15 @@ export class Home extends Page {
             );
         });
 
-        (this.content as Gtk.Stack).add_named(
-            <Adw.Spinner hexpand vexpand /> as Gtk.Widget, "spinner"
-        );
-
         this.reload();
     }
 
     reload(): void {
-        const stack = this.content as Gtk.Stack;
         const plugin = PluginHandler.getDefault().plugin;
-
-        stack.set_visible(true);
-        stack.set_visible_child_name("spinner");
+        this.loading = true;
 
         if(!plugin.isImplemented("recommendations")) {
-            stack.set_visible(false);
+            this.loading = false;
             Vibe.getDefault().addDialog({
                 title: "Unsupported",
                 content: `The ${plugin.prettyName} plugin does not provide the "recommendations"(home screen) feature!\nMaybe it's just a non-content plugin?`,
@@ -59,46 +51,45 @@ export class Home extends Page {
         const promise = plugin.getRecommendations();
 
         if(promise instanceof Promise) {
-            promise.then(sections => this.setupContent(stack, sections)).catch(e => {
+            promise.then(sections => this.setupContent(sections)).catch(e => {
                 console.error(e);
                 if((e as Error).message.trim() !== "")
                     Vibe.getDefault().addDialog({
                         title: "Error",
-                        content: `The plugin returned an error while trying to get recommendations: ${(e as Error).message}`,
+                        content: `The plugin returned an error while trying to get recommendations:\n${(e as Error).message}`,
                         canClose: true
                     });
-            });
+            }).finally(() => this.loading = false);
             return;
         }
 
         try {
-            this.setupContent(stack, promise);
+            this.setupContent(promise);
         } catch(e) {
             console.error(e);
             if((e as Error).message.trim() !== "")
                 Vibe.getDefault().addDialog({
                     title: "Error",
-                    content: `The plugin returned an error while trying to get recommendations: ${(e as Error).message}`,
+                    content: `The plugin returned an error while trying to get recommendations:\n${(e as Error).message}`,
                     canClose: true
                 });
         }
+        this.loading = false;
     }
 
-    private setupContent(stack: Gtk.Stack, sections: Array<SectionType>|null): void {
-        const contentPage = stack.get_child_by_name("content");
-        if(contentPage)
-            stack.remove(contentPage);
+    private setupContent(sections: Array<SectionType>|null): void {
+        if(this.getContent())
+            this.setContent(new Gtk.Box({ visible: true }));
 
         this.#scope.run(() => {
-            stack.add_named(
-                <Gtk.Box>
-                    {sections && sections.map(sect =>
-                        <Section vexpand={false} {...sect} />
-                    )}
-                </Gtk.Box> as Gtk.Box,
-                "content"
-            );
+            if(!sections)
+                return;
+
+            for(const section of sections) {
+                (this.getContent() as Gtk.Box).append(
+                    <Section {...section} /> as Section
+                );
+            }
         });
-        stack.set_visible_child_name("content");
     }
 }

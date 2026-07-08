@@ -3,6 +3,7 @@ import GObject from "gi://GObject?version=2.0";
 import { getter, gtype, property, register, signal } from "gnim/gobject";
 import { Page, Pages as VibePages } from "libvibe/interfaces";
 import { Page as PageWidget } from "../widgets/Page";
+import { VibeObject } from "libvibe/objects";
 
 
 @register({ GTypeName: "VibePagesWidget" })
@@ -118,6 +119,10 @@ export class Pages extends Gtk.Stack implements VibePages {
 
         this.#currentPage = page as Page;
         (this as Pages).notify("current-page");
+
+        if(this.#currentPage.content instanceof VibeObject && this.#currentPage.content.plugin)
+            this.#currentPage.content.plugin.emit("page-request", this.#currentPage);
+
         (this as Pages).emit("added", page);
     }
 
@@ -126,9 +131,10 @@ export class Pages extends Gtk.Stack implements VibePages {
         return Boolean(this.#statics.find(p => p.id === page.id));
     }
 
-    /** add a static page(root page) to the stack. 
+    /** add a root page to the stack; "root" here stands for persistent. 
       * this is used for pages like home, library, etc. */
     public addStatic(page: Page, name?: string) {
+
         this.add_named(page, name ?? String(page.id));
         this.#statics.push(page);
         if(!this.#currentPage) {
@@ -147,9 +153,9 @@ export class Pages extends Gtk.Stack implements VibePages {
         super.remove(child);
     }
 
-    // TODO: support going back a specific number of pages in the history
-    back(numOfPages: number = 1): void {
-        if(this.#history.length < 1 || this.isStatic(this.#currentPage!)) {
+    back(num: number = 1): void {
+
+        if(this.#history.length < 1){
             this.set_visible_child_full(
                 String(this.lastStaticPage!.id),
                 Gtk.StackTransitionType.SLIDE_LEFT_RIGHT

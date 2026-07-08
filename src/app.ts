@@ -11,7 +11,6 @@ import { programArgs, programInvocationName } from "system";
 import Window from "./Window";
 import Media from "./modules/media";
 import { Page } from "./widgets/Page";
-import { Page as VibePage } from "libvibe/interfaces";
 import { Dialog } from "./widgets/Dialog";
 import Mpris from "./modules/mpris";
 import Styler from "./modules/styler";
@@ -21,12 +20,10 @@ import Styler from "./modules/styler";
 export class App extends Adw.Application {
     private static instance: App;
 
-    #license!: string;
     #mainWindow!: Adw.ApplicationWindow;
     #scope!: Scope;
 
     get scope() { return this.#scope; }
-    get license() { return this.#license; }
 
     vfunc_activate(): void {
         createRoot(() => this.main());
@@ -78,7 +75,6 @@ export class App extends Adw.Application {
 
     private main(): void {
         this.#scope = getScope();
-        this.init();
 
         const vibe = new Vibe(); // auto-added as default
         this.#mainWindow = Window.getDefault(this);
@@ -90,7 +86,7 @@ export class App extends Adw.Application {
         vibe.setData(
             new Media(),
             Window.getDefault().getPages(),
-            Page as new <T extends VibePage.Type>(props: VibePage.ConstructorProps<T>) => Page<T>,
+            Page as Vibe.PageConstructor,
             Window.getDefault().getToastOverlay()
         );
 
@@ -107,15 +103,6 @@ export class App extends Adw.Application {
             Mpris.stop();
             this.disconnect(id);
         });
-    }
-
-    private init(): void {
-        this.#license = new TextDecoder("utf-8").decode(
-            Gio.resources_lookup_data(
-                "/io/github/retrozinndev/Vibe/data/license",
-                Gio.ResourceLookupFlags.NONE
-            ).toArray()
-        );
     }
 
     public get_main_window(): Adw.ApplicationWindow {

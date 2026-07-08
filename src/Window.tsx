@@ -2,11 +2,11 @@ import Adw from "gi://Adw?version=1";
 import Gtk from "gi://Gtk?version=4.0";
 import { Accessor, createBinding, createRoot, For, getScope, type Scope } from "gnim";
 import { register } from "gnim/gobject";
-import { createScopedConnection, createSecureAccessorBinding } from "gnim-utils";
+import { createScopedConnection } from "gnim-utils";
 import NavigationTabButton from "./widgets/NavigationTabButton";
 import OmniPlayer from "./widgets/OmniPlayer";
 import PluginSelector from "./widgets/PluginSelector";
-import { Page, Page as PageWidget } from "./widgets/Page";
+import { Page } from "./widgets/Page";
 import { Pages } from "./pages";
 import { Menu } from "./widgets/Menu";
 import AboutDialog from "./widgets/AboutDialog";
@@ -46,27 +46,29 @@ export default class Window extends Adw.ApplicationWindow {
             this.#scope.dispose();
             return true;
         });
-    }
-
-    public init(): void {
-        if(this.#overlay)
-            return;
 
         this.#overlay = Adw.ToastOverlay.new();
         this.#pageStack = new Pages({
             transitionDuration: 400,
             transitionType: Gtk.StackTransitionType.SLIDE_UP_DOWN,
         });
+    }
+
+    public init(): void {
+        if(this.get_content())
+            return;
 
         for(const Page of Window.pagesList)
             this.#pageStack.addStatic(new Page());
 
+        const scroll = Gtk.ScrolledWindow.new();
 
-        this.#overlay.set_child(this.#pageStack);
+        scroll.set_policy(Gtk.PolicyType.NEVER, Gtk.PolicyType.AUTOMATIC);
+        scroll.set_child(this.#pageStack);
+        this.#overlay.set_child(scroll);
         this.set_content(
             <Gtk.Box class={"container background"} orientation={Gtk.Orientation.VERTICAL}>
                 <Adw.NavigationSplitView vexpand sidebarPosition={Gtk.PackType.START}>
-                    {/* sidebar */}
                     <Adw.NavigationPage title={"Sidebar"} $type="sidebar">
                         <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand={false} spacing={6}
                           class={"sidebar-container"}>
@@ -111,10 +113,9 @@ export default class Window extends Adw.ApplicationWindow {
                         </Gtk.Box>
                     </Adw.NavigationPage>
 
-                    {/* page */}
-                    <Adw.NavigationPage title={createSecureAccessorBinding<PageWidget>(
-                        createBinding(this.#pageStack, "visibleChild") as Accessor<PageWidget>, "title", ""
-                    )} name={"navpage"}>
+                    <Adw.NavigationPage title={createBinding(this.#pageStack, "currentPage", "title")}
+                      name={"navpage"}>
+
                         <Gtk.Box class={"container"} vexpand={false} orientation={Gtk.Orientation.VERTICAL}>
                             <Adw.HeaderBar class={"flat"}>
                                 <Gtk.Button iconName={"go-previous-symbolic"} $type="start" 
@@ -122,7 +123,8 @@ export default class Window extends Adw.ApplicationWindow {
                                   onClicked={() => this.#pageStack.back()}
                                 />
                                 <Gtk.Button iconName={"view-refresh-symbolic"} $type="end"
-                                  onClicked={() => this.#pageStack.currentPage?.emit("refresh")}
+                                  //@ts-ignore
+                                  onClicked={() => (this.#pageStack.currentPage as GObject.Object)?.emit("refresh")}
                                 />
                             </Adw.HeaderBar>
                             {this.#overlay}
