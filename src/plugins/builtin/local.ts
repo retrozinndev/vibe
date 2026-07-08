@@ -1,7 +1,7 @@
 import Gio from "gi://Gio?version=2.0";
 import GLib from "gi://GLib?version=2.0";
 import { register } from "gnim/gobject";
-import { Section, Vibe } from "libvibe";
+import { DetailedButton, Section, Vibe } from "libvibe";
 import { SongList, Song, Artist, Album } from "libvibe/objects";
 import { Meta } from "libvibe/utils";
 import { Plugin } from "libvibe/plugin";
@@ -21,7 +21,7 @@ export class PluginLocal extends Plugin {
         "mp3"
     ];
 
-    #library: Array<Song|SongList|Artist> = [];
+    #library: Array<Song> = [];
     #musicDir: Gio.File;
     #scanned: boolean = false;
     #promise: Promise<unknown>|null = null;
@@ -43,6 +43,47 @@ export class PluginLocal extends Plugin {
 
         if(!this.#musicDir.query_exists(null))
             this.#musicDir.make_directory_with_parents(null);
+
+        (this as PluginLocal).connect("page-request", (_, page) => {
+            const object = page.content;
+
+            if(object instanceof Artist) {
+                // TODO: a better thing for editing sections
+                const songs = this.#library.filter(song => song.artist.find(artist => artist.id === object.id));
+
+                page.sections = [
+                    {
+                        title: "Albums",
+                        description: `Produced by ${object.displayName ?? object.name}`,
+                        content: Vibe.getDefault().objects[this.id].album.filter(album =>
+                            album.artist.find(artist => artist.id === object.id)
+                        )
+                    },
+                    {
+                        title: "Songs",
+                        description: `Made exclusively by ${object.displayName ?? object.name}`,
+                        content: songs.filter(song => song.artist[0].id === object.id)
+                    },
+                    {
+                        title: "Collaborations",
+                        description: `Songs where ${object.displayName ?? object.name} was a co-producer`,
+                        content: songs.filter(song => song.artist[0].id !== object.id)
+                    }
+                ]
+                return;
+            }
+
+            if(object instanceof Album) {
+                page.buttons = [{
+                    label: "Play all",
+                    iconName: "media-playback-start-symbolic",
+                    onClicked: () => {
+                        Vibe.getDefault().media.playList(object, 0);
+                    }
+                } satisfies DetailedButton];
+                return;
+            }
+        });
     }
 
     /** recursively list the children of a directory.
@@ -96,7 +137,7 @@ export class PluginLocal extends Plugin {
             });
             this.#library.push(song);
 
-            const tags = await Meta.getMetaTagsAsync(song.source!.peek_path()!);
+            const tags = await Meta.getTagsAsync(song.source!.peek_path()!);
             Meta.applyTags(song, tags, this);
         }
     }
