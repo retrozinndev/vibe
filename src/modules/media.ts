@@ -114,7 +114,7 @@ export default class Media extends VibeObject implements VibeMedia {
         if(list.length < 1)
             return;
 
-        if(list !instanceof Queue) { 
+        if(!(list instanceof Queue)) { 
             this.#queue.clear();
             list.forEach(song => this.#queue.add(song));
             (this as Media).notify("queue");
@@ -226,18 +226,23 @@ export default class Media extends VibeObject implements VibeMedia {
         bus.add_watch(GLib.PRIORITY_DEFAULT, (_, msg) => {
             switch(msg.type) {
                 case Gst.MessageType.EOS:
-                    if(this.loop !== VibeMedia.LoopMode.NONE) {
-                        const loopingSong = this.loop === VibeMedia.LoopMode.SONG;
-                        this.next(loopingSong);
-                        return loopingSong ?
-                            GLib.SOURCE_CONTINUE
-                        : GLib.SOURCE_REMOVE;
+                    if(this.loop === VibeMedia.LoopMode.SONG) {
+                        this.next(true);
+                        return GLib.SOURCE_CONTINUE;
+                    }
+
+                    if(this.loop === VibeMedia.LoopMode.LIST ||
+                       this.queue.currentSong < (this.queue.length-1)
+                    ) {
+                        this.next();
+                        return GLib.SOURCE_CONTINUE;
                     }
 
                     this.#song = null;
-                    (this as Media).notify("song");
+                    this.notify("song");
+                    this.queue.currentSong = 0;
                     this.#status = VibeMedia.PlaybackStatus.STOPPED;
-                    (this as Media).notify("status");
+                    this.notify("status");
                 break;
             }
 
