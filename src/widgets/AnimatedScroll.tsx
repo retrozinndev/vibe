@@ -49,7 +49,15 @@ export class AnimatedScroll extends DragScroll {
         if(x != null) {
             this.#hAnim != null &&
                 this.stopAnimation(this.#hAnim);
-            
+
+            const min = this.get_hadjustment().get_lower(),
+                max = this.get_hadjustment().get_upper();
+
+            if(x < min)
+                x = 0;
+            else if(x > max)
+                x = max;
+
             this.#hAnim = new Animation({
                 widget: this,
                 duration: this.duration,
@@ -62,6 +70,14 @@ export class AnimatedScroll extends DragScroll {
         if(y != null) {
             this.#vAnim != null &&
                 this.stopAnimation(this.#vAnim);
+
+            const min = this.get_vadjustment().get_lower(),
+                max = this.get_vadjustment().get_upper();
+
+            if(y < min)
+                y = min;
+            else if(y > max)
+                y = max;
 
             this.#vAnim = new Animation({
                 widget: this,

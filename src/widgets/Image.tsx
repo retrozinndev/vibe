@@ -24,7 +24,7 @@ export class Image extends Gtk.Picture {
         this.#image = newImage;
         this.notify("image");
 
-        this.load();
+        this.load().catch(console.error);
     }
 
     constructor(props: Partial<GObject.ConstructorProps<Image>>) {
@@ -38,48 +38,44 @@ export class Image extends Gtk.Picture {
         if(props.image !== undefined)
             this.image = props.image;
 
-        const id = (this as Image).connect("destroy", () => {
-            this.disconnect(id);
-            this.unload();
-        });
+        const connections: Array<number> = [
+            (this as Image).connect("map", () => {
+                this.load().catch(console.error);
+            }),
+            (this as Image).connect("unmap", () => {
+                this.unload();
+            }),
+            (this as Image).connect("destroy", () => {
+                connections.forEach(id => this.disconnect(id));
+                this.unload();
+            })
+        ];
     }
 
-    load(): void {
-        if(!this.image) {
-            this.set_paintable(null);
+    async load(): Promise<void> {
+        if(!this.image || this.image.source == null) {
+            this.unload();
             return;
         }
 
-        const texture = this.image.texture;
-        this.image.ref();
+        const texture = await this.image.load();
+        this.image.use();
 
-        if(!texture) {
-            if(this.get_paintable()) {
-                GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
-                    this.set_paintable(texture);
-                    return GLib.SOURCE_REMOVE;
-                });
-
-                return;
-            }
-
-            if(this.image.source || this.image.hasCacheFile) {
-                this.image.load().then(() => this.load())
-                    .catch(console.error);
-            }
-
-            return;
-        }
-
-        GLib.idle_add(GLib.PRIORITY_DEFAULT, () => {
+        GLib.idle_add(GLib.PRIORITY_LOW, () => {
             this.set_paintable(texture);
             return GLib.SOURCE_REMOVE;
         });
     }
 
     unload(): void {
-        this.image?.unref();
-        this.set_paintable(null);
+        if(!this.paintable || !this.image)
+            return;
+
+        this.image.drop();
+        GLib.idle_add(GLib.PRIORITY_LOW, () => {
+            this.paintable = null;
+            return GLib.SOURCE_REMOVE;
+        });
     }
 }
 

@@ -1,17 +1,16 @@
 import Gdk from "gi://Gdk?version=4.0";
 import Gtk from "gi://Gtk?version=4.0";
 import GObject from "gi://GObject?version=2.0";
-import { Accessor, createBinding, For } from "gnim";
+import { Accessor, createBinding, For, This } from "gnim";
 import { getter, gtype, property, register, setter, signal } from "gnim/gobject";
 import { IconButton, isIconButton, LabelButton, Vibe } from "libvibe";
 import { omitObjectKeys } from "../modules/util";
-import { createScopedConnection, toBoolean } from "gnim-utils";
+import { toBoolean } from "gnim-utils";
 import Pango from "gi://Pango?version=1.0";
 import { Album, Artist, Playlist, Song, SongList } from "libvibe/objects";
 import { Image as VibeImage } from "libvibe/utils";
 import { Menu } from "./Menu";
 import { Image } from "./Image";
-import Media from "../modules/media";
 import Graphene from "gi://Graphene?version=1.0";
 
 
@@ -101,34 +100,6 @@ class Card extends Gtk.Box {
             ])
         });
 
-        const click = Gtk.GestureClick.new();
-
-        click.set_button(Gdk.BUTTON_PRIMARY|Gdk.BUTTON_SECONDARY);
-        
-        createScopedConnection(
-            click, "released", (_, xx, yy) => {
-                const { x, y } = this.compute_point(
-                    this,
-                    new Graphene.Point({ x: xx, y: yy })
-                )[1];
-
-                if(click.button === Gdk.BUTTON_PRIMARY) {
-                    (this as Card).emit("clicked", x, y);
-                    return;
-                }
-
-                // emit menu-request for plugin
-                if(this.object && this.object.plugin && this.#menu) {
-                    this.object.plugin.emit("menu-request", this.object, this.#menu);
-                    Vibe.getDefault().emit("menu-request", this.object, this.#menu);
-                }
-
-                (this as Card).emit("menu-request", x, y);
-            }
-        );
-
-        this.add_controller(click);
-
         if(props.title !== undefined)
             this.title = props.title;
 
@@ -141,57 +112,70 @@ class Card extends Gtk.Box {
         if(props.buttonAlign !== undefined)
             this.buttonAlign = props.buttonAlign;
 
-        this.menu = props.menu ?? new Menu({
-            buttons: [{
-                label: "Play",
-                onClicked: () => this.object &&
-                    Media.playObject(this.object)
-            }]
-        });
+        if(props.menu)
+            this.menu = props.menu;
 
-        this.set_orientation(Gtk.Orientation.VERTICAL);
-        this.prepend(
-            <Image image={createBinding(this, "image") as Accessor<VibeImage>} canShrink
-              keepAspectRatio visible={toBoolean(createBinding(this, "image"))}
-            /> as Image
-        );
-
-        this.append(
-            <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand>
-                <Gtk.Label label={createBinding(this, "title")} 
-                  visible={toBoolean(createBinding(this, "title"))}
-                  class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
-                  xalign={0}
+        void (
+            <This this={this as Card} orientation={Gtk.Orientation.VERTICAL}>
+                <Image image={createBinding(this, "image") as Accessor<VibeImage>} canShrink
+                  keepAspectRatio visible={toBoolean(createBinding(this, "image"))}
                 />
-                <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
-                  visible={toBoolean(createBinding(this, "description"))}
-                  class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
+                <Gtk.Box orientation={Gtk.Orientation.VERTICAL} vexpand>
+                    <Gtk.Label label={createBinding(this, "title")} 
+                      visible={toBoolean(createBinding(this, "title"))}
+                      class={"heading"} ellipsize={Pango.EllipsizeMode.END} 
+                      xalign={0}
+                    />
+                    <Gtk.Label label={createBinding(this, "description").as(s => s ?? "")}
+                      visible={toBoolean(createBinding(this, "description"))}
+                      class={"caption dimmed"} ellipsize={Pango.EllipsizeMode.END} xalign={0}
+                    />
+                </Gtk.Box>
+                <Gtk.Separator visible={toBoolean(createBinding(this, "buttons"))} />
+                <Gtk.Box hexpand halign={createBinding(this, "buttonAlign")} 
+                  visible={toBoolean(createBinding(this, "buttons"))}>
+
+                    <For each={createBinding(this, "buttons").as(b => b!)}>
+                        {(button: IconButton|LabelButton) =>
+                            <Gtk.Button iconName={isIconButton(button) ?
+                                button.iconName : undefined
+                              } label={!isIconButton(button) ?
+                                button.label : undefined
+                              } onClicked={() => {
+                                  (this as Card).emit("button-clicked", button);
+                                  button.onClicked?.();
+                              }} class={"flat"}
+                            />
+                        }
+                    </For>
+                </Gtk.Box>
+
+                <Gtk.GestureClick button={0}
+                  onReleased={(click: Gtk.GestureClick, _: number, xx: number, yy: number) => {
+                      const { x, y } = this.compute_point(
+                          this,
+                          new Graphene.Point({ x: xx, y: yy })
+                      )[1];
+
+                      switch(click.get_current_button()) {
+                        case Gdk.BUTTON_PRIMARY: {
+                            (this as Card).emit("clicked", x, y);
+                            return;
+                        };
+
+                        case Gdk.BUTTON_SECONDARY: {
+                          // emit menu-request for plugin
+                          if(this.object && this.object.plugin && this.#menu) {
+                              this.object.plugin.emit("menu-request", this.object, this.#menu);
+                              Vibe.getDefault().emit("menu-request", this.object, this.#menu);
+                          }
+
+                          (this as Card).emit("menu-request", x, y);
+                        };
+                      }
+                  }}
                 />
-            </Gtk.Box> as Gtk.Box
-        );
-
-        this.append(
-            <Gtk.Separator visible={toBoolean(createBinding(this, "buttons"))} /> as Gtk.Separator
-        );
-
-        this.append(
-            <Gtk.Box hexpand halign={createBinding(this, "buttonAlign")} 
-              visible={toBoolean(createBinding(this, "buttons"))}>
-
-                <For each={createBinding(this, "buttons").as(b => b!)}>
-                    {(button: IconButton|LabelButton) =>
-                        <Gtk.Button iconName={isIconButton(button) ?
-                            button.iconName : undefined
-                          } label={!isIconButton(button) ?
-                            button.label : undefined
-                          } onClicked={() => {
-                              (this as Card).emit("button-clicked", button);
-                              button.onClicked?.();
-                          }} class={"flat"}
-                        />
-                    }
-                </For>
-            </Gtk.Box> as Gtk.Box
+            </This>
         );
     }
 }

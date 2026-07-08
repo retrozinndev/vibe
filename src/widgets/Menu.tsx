@@ -36,7 +36,7 @@ export class Menu extends Gtk.Popover implements VibeMenu {
     closeOnSelect: boolean = true;
 
 
-    constructor(props: Partial<GObject.ConstructorProps<Menu>>) {
+    constructor(props: Partial<GObject.ConstructorProps<Menu>> = {}) {
         super({
             autohide: false,
             ...omitObjectKeys(props, [

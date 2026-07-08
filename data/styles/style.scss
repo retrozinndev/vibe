@@ -63,6 +63,7 @@ page {
   & .header {
     & .data {
       padding-top: 4px;
+      min-height: 210px;
     }
 
     & > clamp {
@@ -114,6 +115,11 @@ page {
         margin-left: 6px;
       }
     }
+  }
+
+  & .album-page .song-item {
+    border-bottom: var(--shade-color) 1px solid;
+    
   }
 }
 
