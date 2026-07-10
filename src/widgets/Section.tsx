@@ -14,7 +14,7 @@ import {
 } from "libvibe";
 import { Album, Artist, Playlist, Song, SongList, VibeObject } from "libvibe/objects";
 import { omitObjectKeys } from "../modules/util";
-import { toBoolean } from "gnim-utils";
+import { createScopedConnection, toBoolean } from "gnim-utils";
 import Card from "./Card";
 import Media from "../modules/media";
 import Gio from "gi://Gio?version=2.0";
@@ -155,25 +155,55 @@ class Section extends Gtk.Box {
             </Gtk.CenterBox> as Gtk.CenterBox
         );
 
-        this.append(
-            <Gtk.Overlay>
-                <Gtk.Button iconName="go-previous-symbolic" onClicked={(self: Gtk.Button) => {
-                    const widget = (self.get_parent() as Gtk.Overlay).get_child() as AnimatedScroll;
-                    const adjust = widget.get_hadjustment();
 
-                    widget.scroll(adjust.get_value() - (adjust.get_page_size() / 2));
-                }} halign={Gtk.Align.START} $type="overlay" />
-                <AnimatedScroll propagateNaturalWidth vscrollbarPolicy={Gtk.PolicyType.NEVER}>
-                    {this.#grid}
-                </AnimatedScroll>
-                <Gtk.Button iconName="go-next-symbolic" onClicked={(self: Gtk.Button) => {
-                    const widget = (self.get_parent() as Gtk.Overlay).get_child() as AnimatedScroll;
-                    const adjust = widget.get_hadjustment();
+        const scroll = new AnimatedScroll({
+            visible: true,
+            propagateNaturalWidth: true,
+            vscrollbarPolicy: Gtk.PolicyType.NEVER,
+            child: this.#grid
+        });
+        const overlay = new Gtk.Overlay({
+            visible: true,
+            child: scroll
+        });
+        this.append(overlay);
 
-                    widget.scroll(adjust.get_value() + (adjust.get_page_size() / 2));
-                }} halign={Gtk.Align.END} $type="overlay" />
-            </Gtk.Overlay> as Gtk.Overlay
-        );
+        const adjust = scroll.get_hadjustment();
+        const leftButton = <Gtk.Button onClicked={() => {
+              scroll.scroll(adjust.get_value() - (adjust.get_page_size() / 2));
+          }} visible={adjust.get_value() > adjust.get_lower()} 
+          halign={Gtk.Align.START}
+        /> as Gtk.Button;
+        const rightButton = <Gtk.Button onClicked={() => {
+              scroll.scroll(adjust.get_value() + (adjust.get_page_size() / 2));
+          }} visible={adjust.get_value() < adjust.get_upper()}
+          halign={Gtk.Align.END}
+        /> as Gtk.Button;
+
+        overlay.add_overlay(leftButton);
+        overlay.add_overlay(rightButton);
+
+        const onMoved = () => {
+            if(adjust.get_value() >= adjust.get_upper()) {
+                rightButton.is_visible() && rightButton.set_visible(false);
+                return;
+            } else if(adjust.get_value() <= adjust.get_lower()) {
+                leftButton.is_visible() && leftButton.set_visible(false);
+                return;
+            }
+
+            !rightButton.is_visible() && rightButton.set_visible(true);
+            !leftButton.is_visible() && leftButton.set_visible(true);
+        };
+
+        const valueChanged = adjust.connect("value-changed", () => onMoved());
+        const pageSize = adjust.connect("notify::page-size", () => onMoved());
+
+        const destroy = scroll.connect("destroy", () => {
+            scroll.disconnect(destroy);
+            adjust.disconnect(pageSize);
+            adjust.disconnect(valueChanged);
+        });
     }
 }
 

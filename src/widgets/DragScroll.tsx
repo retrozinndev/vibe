@@ -1,5 +1,5 @@
 import Gtk from "gi://Gtk?version=4.0";
-import { register, getter } from "gnim/gobject";
+import { register, getter, property } from "gnim/gobject";
 import GObject from "gi://GObject?version=2.0";
 import { createScopedConnection } from "gnim-utils";
 import GLib from "gi://GLib?version=2.0";
@@ -17,6 +17,11 @@ export class DragScroll extends Gtk.ScrolledWindow {
     @getter(Boolean)
     get dragging() { return this.#drag.is_recognized(); }
 
+    /** avoids propagating a secondary event on ::drag-end if it's outside the `grabRange`.
+      * @default `0` */
+    @property(Number)
+    grabRange: number = 0;
+
     constructor(props: Partial<GObject.ConstructorProps<DragScroll>>) {
         super(props);
 
@@ -26,6 +31,9 @@ export class DragScroll extends Gtk.ScrolledWindow {
             this.notify("dragging");
         });
         createScopedConnection(this.#drag, "drag-update", (offX, offY) => {
+            if(!((offX < this.grabRange && offX > -this.grabRange) || (offY < this.grabRange && offY > -this.grabRange)))
+                this.#drag.set_state(Gtk.EventSequenceState.CLAIMED);
+
             GLib.idle_add(GLib.PRIORITY_LOW, () => {
                 const [scrollH, scrollV] = this.#scrollStart;
                 const h = this.get_hadjustment(), v = this.get_vadjustment();
@@ -39,6 +47,7 @@ export class DragScroll extends Gtk.ScrolledWindow {
         createScopedConnection(this.#drag, "drag-end", () => {
             // TODO overshoot (keep scrolling with ease-out)
             this.notify("dragging");
+            this.#drag.set_state(Gtk.EventSequenceState.NONE);
         });
 
         this.add_controller(this.#drag);
