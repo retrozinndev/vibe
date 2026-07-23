@@ -20,7 +20,7 @@ export class DragScroll extends Gtk.ScrolledWindow {
     /** avoids propagating a secondary event on ::drag-end if it's outside the `grabRange`.
       * @default `0` */
     @property(Number)
-    grabRange: number = 0;
+    grabRange: number = .000005;
 
     constructor(props: Partial<GObject.ConstructorProps<DragScroll>>) {
         super(props);
@@ -31,7 +31,7 @@ export class DragScroll extends Gtk.ScrolledWindow {
             this.notify("dragging");
         });
         createScopedConnection(this.#drag, "drag-update", (offX, offY) => {
-            if(!((offX < this.grabRange && offX > -this.grabRange) || (offY < this.grabRange && offY > -this.grabRange)))
+            if(Math.abs(offX) > this.grabRange || Math.abs(offY) > this.grabRange)
                 this.#drag.set_state(Gtk.EventSequenceState.CLAIMED);
 
             GLib.idle_add(GLib.PRIORITY_LOW, () => {

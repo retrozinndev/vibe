@@ -26,6 +26,7 @@ export class Page<T extends VibePage.Type = Gtk.Widget> extends Gtk.Stack implem
 
     #content: T|null;
 
+    @property(String)
     title: string = "New page";
 
     /** if the page is static, this will be the icon for the tab button */

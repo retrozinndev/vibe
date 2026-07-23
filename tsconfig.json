@@ -3,7 +3,9 @@
     "compilerOptions": {
         "rootDir": ".",
         "allowJs": false,
-        "lib": ["ES2025"],
+        "lib": ["ESNext"],
+        "module": "esnext",
+        "target": "esnext",
         "moduleResolution": "bundler",
         "skipLibCheck": true,
         "strict": true,
