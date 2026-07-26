@@ -28,11 +28,11 @@ a help message that you can trigger with `-h`.
 ### Cloning the repo
 You can run:
 ```zsh
-git clone https://github.com/retrozinndev/vibe.git
+git clone https://github.com/retrozinndev/vibe.git --recurse-submodules
 ```
 or, if you have GitHub CLI:
 ```zsh
-gh repo clone retrozinndev/vibe
+gh repo clone retrozinndev/vibe --recurse-submodules
 ```
 
 ### Build types (needed)
