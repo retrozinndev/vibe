@@ -6,7 +6,7 @@ import Pango from "gi://Pango?version=1.0";
 import Adw from "gi://Adw?version=1";
 import { Image } from "./Image";
 import { Vibe } from "libvibe";
-import GLib from "gi://GLib?version=2.0";
+import { secToTimestamp } from "../modules/time";
 
 
 export default () => {
@@ -16,8 +16,6 @@ export default () => {
 
         return image ?? albumArt!;
     });
-
-    let timeout: GLib.Source|undefined;
 
     return <Adw.Clamp orientation={Gtk.Orientation.VERTICAL} maximumSize={75} vexpand={false}
       heightRequest={80}>
@@ -118,51 +116,57 @@ export default () => {
                       }}
                     />
                 </Gtk.Box>
-                <Gtk.Scale class={"slider fine-tune"} drawValue={false} hexpand valign={Gtk.Align.START}
-                  $={(self) => {
-                      self.set_value(0);
-                      self.set_range(0, 1);
+                <Gtk.Box>
+                    <Gtk.Label label={createBinding(Vibe.getDefault(), "media", "position")(secToTimestamp)}
+                      class="numeric caption" />
+                    <Gtk.Scale class={"slider fine-tune"} drawValue={false} hexpand valign={Gtk.Align.START}
+                      $={(self) => {
+                          self.set_value(0);
+                          self.set_range(0, 1);
 
-                      let ignoreChange: boolean = false;
-                      const mediaSubs = [
-                          createBinding(Vibe.getDefault(), "media", "position").subscribe(() => {
-                              ignoreChange = true;
-                              const pos = Vibe.getDefault().media.position;
+                          let ignoreChange: boolean = false;
+                          const mediaSubs = [
+                              createBinding(Vibe.getDefault(), "media", "position").subscribe(() => {
+                                  ignoreChange = true;
+                                  const pos = Vibe.getDefault().media.position;
 
-                              if(pos < 0) {
-                                  self.set_value(0);
+                                  if(pos < 0) {
+                                      self.set_value(0);
+                                      return;
+                                  }
+
+                                  self.set_value(pos);
+                              }),
+                              createBinding(Vibe.getDefault(), "media", "length").subscribe(() => {
+                                  const length = Vibe.getDefault().media.length;
+                                  if(length < 0) {
+                                      self.set_range(0, 0);
+                                      return;
+                                  }
+
+                                  self.set_range(0, length);
+                                      
+                              })
+                          ];
+
+                          const id = self.connect("value-changed", (self) => {
+                              if(ignoreChange) {
+                                  ignoreChange = false;
                                   return;
                               }
 
-                              self.set_value(pos);
-                          }),
-                          createBinding(Vibe.getDefault(), "media", "length").subscribe(() => {
-                              const length = Vibe.getDefault().media.length;
-                              if(length < 0) {
-                                  self.set_range(0, 0);
-                                  return;
-                              }
+                              Vibe.getDefault().media.position = self.get_value();
+                          });
 
-                              self.set_range(0, length);
-                                  
-                          })
-                      ];
-
-                      const id = self.connect("value-changed", (self) => {
-                          if(ignoreChange) {
-                              ignoreChange = false;
-                              return;
-                          }
-
-                          Vibe.getDefault().media.position = self.get_value();
-                      });
-
-                      getScope().onCleanup(() => {
-                          mediaSubs.forEach(unsub => unsub());
-                          self.disconnect(id);
-                      });
-                  }}
-                />
+                          getScope().onCleanup(() => {
+                              mediaSubs.forEach(unsub => unsub());
+                              self.disconnect(id);
+                          });
+                      }}
+                    />
+                    <Gtk.Label label={createBinding(Vibe.getDefault(), "media", "length")(secToTimestamp)}
+                      class="numeric caption" />
+                </Gtk.Box>
             </Gtk.Box>
             <Gtk.Box $type="end" hexpand={false} halign={Gtk.Align.END}>
                 <Gtk.Box class={"volume-slider"} spacing={2}>

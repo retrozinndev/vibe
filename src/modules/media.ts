@@ -56,7 +56,9 @@ export default class Media extends VibeObject implements VibeMedia {
         if(!this.#song || this.#status === VibeMedia.PlaybackStatus.STOPPED)
             return;
 
-        this.#pipeline?.seek_simple(Gst.Format.TIME, Gst.SeekFlags.FLUSH, newPos * Gst.SECOND);
+        this.#pipeline?.seek_simple(
+            Gst.Format.TIME, Gst.SeekFlags.FLUSH, newPos * Gst.SECOND
+        );
     }
 
     @getter(Number)
@@ -276,7 +278,7 @@ export default class Media extends VibeObject implements VibeMedia {
                     this.#length = newLength / Gst.SECOND;
                     (this as Media).notify("length");
                 }
-            }, 800)
+            }, 400)
         );
     }
 
