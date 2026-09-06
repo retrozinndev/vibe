@@ -42,6 +42,6 @@
   "dependencies": {
     "gnim": "^1.9.1",
     "gnim-utils": "github:retrozinndev/gnim-utils",
-    "libvibe": "link:libvibe"
+    "libvibe": "file:./libvibe"
   }
 }
