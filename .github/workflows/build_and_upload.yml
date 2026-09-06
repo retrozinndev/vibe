@@ -10,22 +10,19 @@ on:
   workflow_dispatch:
 
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
       - name: "Checkout"
-        uses: "actions/checkout@v6"
+        uses: "actions/checkout@v7"
         with:
           submodules: "recursive"
           path: "."
 
-      - name: "Setup node and pnpm"
-        uses: "pnpm/action-setup@v4.2.0"
+      - name: "Setup bun"
+        uses: "oven-sh/setup-bun@v2"
         with:
           version: "latest"
           run_install: false
@@ -34,13 +31,13 @@ jobs:
         run: |
           sudo apt update -y
           sudo apt install -y --fix-broken libglib2.0-dev gobject-introspection libgirepository1.0-dev build-essential gjs
-          pnpm install --dangerously-allow-all-builds
+          bun install --trust
 
       - name: "Build project"
-        run: "pnpm build -rg ./gresource"
+        run: "bun run build -rg ./gresource"
 
       - name: "Upload"
-        uses: "actions/upload-artifact@v5"
+        uses: "actions/upload-artifact@v7"
         with:
           name: "vibe"
           path: "build/"
