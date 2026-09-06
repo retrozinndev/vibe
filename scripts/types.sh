@@ -1,2 +1,2 @@
 echo "[info] building types, this can take long..."
-girgen -i Gtk-3.0 typescript --alias
+girgen -i Gtk-3.0 gjs --alias

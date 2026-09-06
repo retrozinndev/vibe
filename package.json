@@ -3,9 +3,9 @@
   "name": "vibe",
   "version": "0.0.1",
   "description": "The craziest music player!",
-  "homepage": "https://github.com/retrozinndev/Vibe#readme",
+  "homepage": "https://github.com/retrozinndev/vibe#readme",
   "bugs": {
-    "url": "https://github.com/retrozinndev/Vibe/issues"
+    "url": "https://github.com/retrozinndev/vibe/issues"
   },
   "keywords": [
     "music-player",
@@ -16,12 +16,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/retrozinndev/Vibe.git"
-  },
-  "pnpm": {
-    "ignoredBuiltDependencies": [
-      "esbuild"
-    ]
+    "url": "git+https://github.com/retrozinndev/vibe.git"
   },
   "license": "BSD-3-Clause",
   "author": {
@@ -40,8 +35,9 @@
   },
   "devDependencies": {
     "esbuild": "^0.27.7",
-    "girgen": "^0.3.16",
-    "sass": "^1.100.0"
+    "girgen": "^0.3.21",
+    "sass": "^1.104.0",
+    "typescript": "^7.0.2"
   },
   "dependencies": {
     "gnim": "^1.9.1",
