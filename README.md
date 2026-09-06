@@ -13,7 +13,7 @@ This is only a demonstration, some UI elements might not work as intended.
 ## Goals
 - [x] Play music locally
 - [x] Adwaita-based UI, but keeping it familiar to other apps
-- [-] Plugin support (for adding new sources and features...)
+- [x] Plugin support (for adding new sources and features...)
 - [x] Implement MPRIS
 - [ ] Internationalization (i18n)
 
@@ -39,8 +39,8 @@ gh repo clone retrozinndev/vibe --recurse-submodules
 
 ### Build types
 You need to build types before starting to develop: this will let TypeScript know which 
-libraries from the [GI Repository(GIR)](https://gi.readthedocs.io/en/latest) are available to be used in the project,
-and also integrating autocompletion, thanks to [gjsify/ts-for-gir](https://github.com/gjsify/ts-for-gir).
+libraries from [GIR](https://gi.readthedocs.io/en/latest) are available to be used in the project,
+and also adding support for autocompletion, thanks to [aylur/girgen](https://github.com/aylur/girgen).
 
 You can do so by running
 ```zsh
